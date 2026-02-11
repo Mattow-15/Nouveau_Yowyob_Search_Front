@@ -1,0 +1,12 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "max-len": ["off"],
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "@next/next/no-img-element": "off",
+    "react-hooks/exhaustive-deps": "warn",
+    "react/no-unescaped-entities": "off"
+  }
+}
