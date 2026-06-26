@@ -1,133 +1,183 @@
-/**
- * Search Result Card component
- * @author Matteo Owona, Rouchda Yampen
- * @date 2024-12-06
- */
-
 'use client';
 
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { SearchResult } from '@/types/search';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { getDirectionsUrl, openDirections } from './serp/get-directions-url';
 
 interface ResultCardProps {
-  item: {
-    id: string;
-    name: string;
-    description: string;
-    type: 'product' | 'service' | 'shop';
-    price?: number;
-    images: string[];
-    shop: {
-      name: string;
-      address: string;
-    };
-    location?: {
-      lat: number;
-      lng: number;
-    };
-    tags?: string[];
-    detailsUrl?: string;
-  };
-  onClick?: (item: any) => void;
+  result: SearchResult;
 }
 
-export const ResultCard: React.FC<ResultCardProps> = ({ item, onClick }) => {
-  const typeColors = {
-    product: 'info',
-    service: 'success',
-    shop: 'warning',
-  } as const;
+// Convertit priceLevel (0-4) en symboles $
+function getPriceSymbols(level?: number): string {
+  if (level === undefined || level === null) return '';
+  return '$'.repeat(Math.min(level + 1, 4));
+}
 
-  const typeLabels = {
-    product: 'Produit',
-    service: 'Service',
-    shop: 'Commerce',
+// Badge ouvert/fermé
+function OpenStatusBadge({ openNow }: { openNow?: boolean }) {
+  if (openNow === undefined || openNow === null) return null;
+  return (
+    <span className={`
+      inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold
+      ${openNow
+        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+        : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'}
+    `}>
+      <span className={`w-1.5 h-1.5 rounded-full ${openNow ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+      {openNow ? 'Ouvert' : 'Fermé'}
+    </span>
+  );
+}
+
+export default function ResultCard({ result }: ResultCardProps) {
+  const router = useRouter();
+
+  const handleCardClick = () => {
+    router.push(`/search/${result.id}`);
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'XAF',
-      minimumFractionDigits: 0,
-    }).format(price);
+  // Lien « Aller à » : itinéraire calculé directement (cf. getDirectionsUrl).
+  const directionsUrl = getDirectionsUrl(result);
+
+  const handleDirectionsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    openDirections(result); // part de la position de l'utilisateur (IP)
   };
 
   return (
     <div
-      className="cursor-pointer h-full group"
-      onClick={() => onClick?.(item)}
+      onClick={handleCardClick}
+      className="
+        group relative flex flex-col bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700
+        rounded-xl overflow-hidden shadow-sm
+        hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600
+        cursor-pointer transition-all duration-200
+      "
     >
-      <Card className="hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden bg-white dark:bg-gray-800 h-full flex flex-col border-gray-100 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-2xl">
-        {/* Image */}
-        {item.images.length > 0 && (
-          <div className="relative h-48 w-full bg-gray-100 dark:bg-gray-700 rounded-2xl overflow-hidden mb-4 flex-shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.images[0]}
-              alt={item.name}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-            />
-            <div className="absolute top-3 right-3">
-              <Badge variant={typeColors[item.type]}>
-                {typeLabels[item.type]}
-              </Badge>
-            </div>
+      {/* Image */}
+      <div className="relative h-44 w-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+        {result.imageUrl ? (
+          <Image
+            src={result.imageUrl}
+            alt={result.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            unoptimized
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-4xl">
+            {result.category === 'restaurant' ? '🍽️'
+              : result.category === 'pharmacy' ? '💊'
+              : result.category === 'bank' ? '🏦'
+              : result.category === 'hospital' ? '🏥'
+              : result.category === 'supermarket' ? '🛒'
+              : '🏪'}
           </div>
         )}
 
-        {/* Content */}
-        <div className="space-y-3 flex-1 flex flex-col">
-          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            {item.name}
-          </h3>
-
-          <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 flex-shrink-0">
-            {item.description}
-          </p>
-
-          {/* Price */}
-          {item.price && (
-            <div className="text-2xl font-black gradient-text flex-shrink-0">
-              {formatPrice(item.price)}
-            </div>
-          )}
-
-          {/* Spacer to push shop info to bottom */}
-          <div className="flex-1"></div>
-
-          {/* Shop Info */}
-          <div className="pt-3 border-t border-gray-100 dark:border-gray-700 space-y-1 flex-shrink-0">
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <span className="font-semibold text-gray-800 dark:text-gray-200">{item.shop.name}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="line-clamp-1">{item.shop.address}</span>
-            </div>
+        {/* Badge source Google */}
+        {result.source === 'google_places' && (
+          <div className="absolute top-2 left-2 bg-white dark:bg-gray-800 rounded-full px-2 py-0.5 text-xs font-medium text-gray-600 shadow">
+            📍 Google
           </div>
+        )}
 
-          {/* Tags */}
-          {item.tags && item.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 flex-shrink-0">
-              {item.tags.slice(0, 3).map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-semibold rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
+        {/* Badge source Kernel (annuaire officiel des organisations) */}
+        {result.source === 'KERNEL_ORG' && (
+          <div className="absolute top-2 left-2 inline-flex items-center gap-1 bg-emerald-600 text-white rounded-full px-2 py-0.5 text-xs font-medium shadow">
+            ✓ Annuaire officiel
+          </div>
+        )}
+      </div>
+
+      {/* Contenu */}
+      <div className="flex flex-col gap-2 p-3 flex-1">
+
+        {/* Nom + badges */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-tight line-clamp-2">
+            {result.title}
+          </h3>
+          <OpenStatusBadge openNow={result.openNow} />
+        </div>
+
+        {/* Catégorie + prix */}
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          {result.category && (
+            <span className="capitalize bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+              {result.category}
+            </span>
+          )}
+          {result.priceLevel !== undefined && result.priceLevel !== null && (
+            <span className="text-green-600 dark:text-green-400 font-medium">
+              {getPriceSymbols(result.priceLevel)}
+            </span>
           )}
         </div>
-      </Card>
+
+        {/* Note */}
+        {result.rating && (
+          <div className="flex items-center gap-1 text-xs">
+            <span className="text-yellow-400">{'★'.repeat(Math.round(result.rating))}</span>
+            <span className="text-gray-600 dark:text-gray-300 font-medium">{result.rating.toFixed(1)}</span>
+            {result.reviewsCount && (
+              <span className="text-gray-400">({result.reviewsCount} avis)</span>
+            )}
+          </div>
+        )}
+
+        {/* Adresse */}
+        {(result.street || result.city) && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 line-clamp-1">
+            <span>📍</span>
+            {result.street ? `${result.street}, ` : ''}{result.city}
+          </p>
+        )}
+
+        {/* Téléphone */}
+        {result.phone && (
+          <a
+            href={`tel:${result.phone}`}
+            onClick={e => e.stopPropagation()}
+            className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline w-fit"
+          >
+            <span>📞</span> {result.phone}
+          </a>
+        )}
+
+        {/* Boutons bas de carte */}
+        <div className="flex gap-2 mt-auto pt-2">
+          <button
+            onClick={handleCardClick}
+            className="
+              flex-1 text-xs py-1.5 px-3 rounded-lg
+              bg-blue-600 hover:bg-blue-700 text-white
+              transition-colors font-medium
+            "
+          >
+            Voir les détails
+          </button>
+
+          {directionsUrl && (
+            <button
+              onClick={handleDirectionsClick}
+              className="
+                text-xs py-1.5 px-3 rounded-lg
+                border border-gray-300 dark:border-gray-600
+                hover:bg-gray-50 dark:hover:bg-gray-700
+                text-gray-600 dark:text-gray-300
+                transition-colors font-medium
+              "
+              title="Calculer l'itinéraire vers ce commerce"
+            >
+              🧭 Aller à
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
-};
+}

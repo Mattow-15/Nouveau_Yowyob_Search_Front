@@ -48,12 +48,12 @@ export const HeaderAuthenticated: React.FC<HeaderAuthenticatedProps> = ({ userNa
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3">
-              {/* Version avec Image Next.js */}
               <div className="relative w-12 h-12">
                 <img
                   src="/logo.jpg"
+                  className="w-full h-full object-contain rounded-2xl dark:invert dark:hue-rotate-180 dark:mix-blend-screen"
+                  alt="Yowyob Logo"
                 />
-
               </div>
               <div>
                 <h1 className="text-xl font-black text-gray-900 dark:text-white">Yowyob</h1>

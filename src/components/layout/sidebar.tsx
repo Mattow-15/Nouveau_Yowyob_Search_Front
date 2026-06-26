@@ -12,8 +12,10 @@ import { searchService } from '@/lib/api/search-service';
 
 export const Sidebar = () => {
     const { sidebarOpen, toggleSidebar } = useStore();
-    const { history: localHistory, removeFromHistory, clearHistory, setSearchQuery } = useSearchStore();
-    const { status } = useSession();
+    const { userHistory, removeFromHistory, clearHistory, setSearchQuery } = useSearchStore();
+    const { data: session, status } = useSession();
+    const userId = session?.user?.id || 'anonymous';
+    const localHistory = userHistory[userId] || [];
     const router = useRouter();
 
     const [backendHistory, setBackendHistory] = useState<any[]>([]);
@@ -100,7 +102,7 @@ export const Sidebar = () => {
                                 <span className="text-sm text-gray-500 font-medium">Recherches récentes</span>
                                 {status !== 'authenticated' && (
                                     <button
-                                        onClick={clearHistory}
+                                        onClick={() => clearHistory(userId)}
                                         className="text-xs text-red-500 hover:text-red-600 font-medium"
                                     >
                                         Tout effacer
@@ -125,7 +127,7 @@ export const Sidebar = () => {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                removeFromHistory(item.query);
+                                                removeFromHistory(item.query, userId);
                                             }}
                                             className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
                                         >

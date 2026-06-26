@@ -1,21 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-
-  // Internationalisation (Désactivé pour App Router sans [lang])
-  /*
+  
+  // Internationalisation
   i18n: {
     locales: ['fr', 'en'],
     defaultLocale: 'fr',
     localeDetection: false,
   },
-  */
 
   // Images
   images: {
     domains: [
       'localhost',
       'api-services.yowyob.com',
+      'maps.googleapis.com',
+      'lh3.googleusercontent.com',
     ],
     formats: ['image/avif', 'image/webp'],
   },

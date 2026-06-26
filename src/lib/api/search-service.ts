@@ -4,7 +4,7 @@
 
 import { httpClient } from './http-client';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
-import { SearchResult } from '@/types/search';
+import { SearchResult, AiSearchResponse } from '@/types/search';
 
 interface SearchFilters {
   query: string;
@@ -82,7 +82,7 @@ class SearchService {
         city: item.city || '',
         quartier: item.quartier || '',
         tags: item.tags || [item.category].filter(Boolean) || [],
-        detailsUrl: `/search/${item.id}`,
+        detailsUrl: item.website || (item.title ? `https://www.google.com/search?q=${encodeURIComponent(item.title + (item.city ? ' ' + item.city : ''))}` : `/search/${item.id}`),
       }));
 
       return {
@@ -99,6 +99,75 @@ class SearchService {
         page: filters.page || 1,
         success: false
       };
+    }
+  }
+
+  async searchAi(query: string, city?: string): Promise<AiSearchResponse & { success: boolean }> {
+    try {
+      const params = new URLSearchParams();
+      if (query) params.append('q', query);
+      if (city) params.append('city', city);
+
+      const response = await httpClient.get<any>(`${API_ENDPOINTS.SEARCH}/ai?${params.toString()}`);
+
+      const sources = (response.sources || []).map((item: any) => ({
+        ...item,
+        name: item.name || item.title || 'Sans nom',
+        type: (item.type?.toLowerCase() === 'listing' ? 'product' : (item.type?.toLowerCase() === 'user' ? 'shop' : item.type?.toLowerCase())) || 'product',
+        images: item.images || ['https://images.unsplash.com/photo-1586769852836-bc069f19e1b6?w=400'],
+        shop: item.shop ? {
+          ...item.shop,
+          email: item.shop.email || 'contact@boutique.com',
+          phone: item.shop.phone || '+237 600 000 000',
+          description: item.shop.description || 'Boutique partenaire Yowyob'
+        } : {
+          name: 'Commerçant local',
+          address: item.city || 'Yaoundé',
+          email: 'contact@local.com',
+          phone: '+237 600 000 000',
+          description: 'Vendeur particulier'
+        },
+        location: parseLocation(item),
+        city: item.city || '',
+        quartier: item.quartier || '',
+        tags: item.tags || [item.category].filter(Boolean) || [],
+        detailsUrl: item.website || (item.title ? `https://www.google.com/search?q=${encodeURIComponent(item.title + (item.city ? ' ' + item.city : ''))}` : `/search/${item.id}`),
+      }));
+
+      return {
+        aiAnswer: response.aiAnswer || '',
+        intent: response.intent || 'GENERAL',
+        rewrittenQuery: response.rewrittenQuery || query,
+        sources,
+        processingTimeMs: response.processingTimeMs || 0,
+        aiMode: response.aiMode || false,
+        success: true
+      };
+    } catch (error) {
+      console.error('AI search failed:', error);
+      return {
+        aiAnswer: '',
+        intent: 'GENERAL',
+        rewrittenQuery: query,
+        sources: [],
+        processingTimeMs: 0,
+        aiMode: false,
+        success: false
+      };
+    }
+  }
+
+  // FAQ « Autres questions posées » générée dynamiquement côté backend (Groq).
+  // Renvoie [] en cas d'échec → le composant retombe sur ses questions statiques.
+  async getFaq(query: string, city?: string): Promise<Array<{ question: string; answer: string }>> {
+    try {
+      const params = new URLSearchParams();
+      if (query) params.append('q', query);
+      if (city) params.append('city', city);
+      const response = await httpClient.get<any>(`${API_ENDPOINTS.SEARCH}/faq?${params.toString()}`);
+      return Array.isArray(response?.questions) ? response.questions : [];
+    } catch {
+      return [];
     }
   }
 

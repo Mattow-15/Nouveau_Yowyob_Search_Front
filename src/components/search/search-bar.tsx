@@ -42,8 +42,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [historySuggestions, setHistorySuggestions] = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { addToHistory, history } = useSearchStore();
-  const { status } = useSession();
+  const { addToHistory, userHistory } = useSearchStore();
+  const { data: session, status } = useSession();
+  const userId = session?.user?.id || 'anonymous';
+  const history = userHistory[userId] || [];
 
   // Debounced search with history
   useEffect(() => {
@@ -96,8 +98,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
     if (status === 'authenticated') {
-      addToHistory(suggestion);
+      addToHistory(suggestion, userId);
       searchService.addToHistory(suggestion);
+    } else {
+      addToHistory(suggestion, userId);
     }
     onSearch(suggestion);
     setShowDropdown(false);
@@ -106,13 +110,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
+      const cleanQuery = query.trim();
+      addToHistory(cleanQuery, userId);
       if (status === 'authenticated') {
-        const cleanQuery = query.trim();
-        addToHistory(cleanQuery);
         // Persist to backend for authenticated users "Google-style"
         searchService.addToHistory(cleanQuery);
       }
-      onSearch(query.trim());
+      onSearch(cleanQuery);
       setShowDropdown(false);
       inputRef.current?.blur();
     }

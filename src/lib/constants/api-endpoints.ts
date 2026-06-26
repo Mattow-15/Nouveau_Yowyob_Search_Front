@@ -31,7 +31,7 @@ export const API_ENDPOINTS = {
   // User
   USER_PROFILE: `/api/users/me`,
   USER_HISTORY: `/api/users/history`,
-  USER_FAVORITES: `/api/user/favorites`,
+  USER_FAVORITES: `/api/users/favorites`,
 
   // Listings by Seller
   LISTINGS_BY_SELLER: (sellerId: string) => `/api/listings/seller/${sellerId}`,
@@ -44,6 +44,7 @@ export const API_ENDPOINTS = {
   // Geo
   GEO_DISTANCE: `/api/geo/distance`,
   GEO_ROUTE: `/api/geo/route`,
+  GEO_GEOCODE: `/api/geo/geocode`,
 } as const;
 
 export const WS_ENDPOINTS = {

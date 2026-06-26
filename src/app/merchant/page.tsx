@@ -111,7 +111,7 @@ export default function MerchantPage() {
                         </span>
                       </td>
                       <td className="p-6 font-black text-gray-800 dark:text-gray-100">
-                        {listing.price.toLocaleString()} CFA
+                        {(listing.price ?? 0).toLocaleString()} CFA
                       </td>
                       <td className="p-6">
                         <span className="flex items-center gap-2 text-green-500 font-bold text-sm">

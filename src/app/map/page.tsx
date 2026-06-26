@@ -1,113 +1,168 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
+import { Search, Loader2, MapPin, LocateFixed } from 'lucide-react';
 import { HeaderPublic } from '@/components/layout/header-public';
 import { HeaderAuthenticated } from '@/components/layout/header-authenticated';
-import { MapContainer } from '@/components/map/map-container';
-import { MOCK_RESULTS } from '@/app/search/mock-data';
+import { searchService } from '@/lib/api/search-service';
+import { geoService } from '@/lib/api/geo-service';
+import { SearchResult } from '@/types/search';
 import { useSearchStore } from '@/store';
+
+// Leaflet n'est rendu QUE côté client (accès à window) → import dynamique sans SSR.
+const MapView = dynamic(() => import('@/components/map/map-view'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+      <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+    </div>
+  ),
+});
+
+const YAOUNDE: [number, number] = [3.848, 11.5021];
 
 export default function MapPage() {
   const { data: session } = useSession();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
   const { addToHistory } = useSearchStore();
 
-  // Filter results based on search query
-  const filteredResults = searchQuery.trim()
-    ? MOCK_RESULTS.filter(item =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.shop.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    : MOCK_RESULTS;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [userLocation, setUserLocation] = useState<[number, number] | undefined>();
+  const [locating, setLocating] = useState(false);
 
-  // Convert results to map markers
-  const markers = filteredResults.map(item => ({
-    id: item.id,
-    position: [item.location.lat, item.location.lng] as [number, number],
-    title: item.name,
-    description: `${item.shop.name} - ${item.shop.address}`,
-  }));
+  // Lance une recherche réelle (requête vide au montage = peuplement initial de la carte).
+  const runSearch = useCallback(async (query: string) => {
+    setIsSearching(true);
+    try {
+      const res = await searchService.search({ query });
+      setResults(res.results || []);
+    } catch {
+      setResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    runSearch('');
+  }, [runSearch]);
+
+  // Marqueurs = résultats géolocalisés.
+  const markers = useMemo(
+    () =>
+      results
+        .filter((r) => r.location && typeof r.location.lat === 'number')
+        .map((r) => ({
+          id: r.id,
+          position: [r.location!.lat, r.location!.lng] as [number, number],
+          title: r.name || r.title || 'Sans nom',
+          description: [r.category, r.city].filter(Boolean).join(' · '),
+        })),
+    [results]
+  );
+
+  // Centre : la position de l'utilisateur si demandée, sinon le barycentre des marqueurs.
+  const center = useMemo<[number, number]>(() => {
+    if (userLocation) return userLocation;
+    if (markers.length === 0) return YAOUNDE;
+    const sum = markers.reduce(
+      (acc, m) => [acc[0] + m.position[0], acc[1] + m.position[1]],
+      [0, 0]
+    );
+    return [sum[0] / markers.length, sum[1] / markers.length];
+  }, [markers, userLocation]);
+
+  // Zoom plus serré quand on est centré sur l'utilisateur.
+  const zoom = userLocation ? 15 : 12;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      addToHistory(searchQuery.trim());
-      setIsSearching(true);
-      // Simulate search delay
-      setTimeout(() => setIsSearching(false), 300);
-    }
+    const q = searchQuery.trim();
+    if (q) addToHistory(q);
+    runSearch(q);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch(e as any);
+  // « Ma position » : GPS du navigateur d'abord (précis), IP en repli.
+  const handleLocate = useCallback(async () => {
+    setLocating(true);
+    try {
+      let loc: { lat: number; lng: number } | null = null;
+      try {
+        loc = await geoService.getCurrentPosition();
+      } catch {
+        loc = await geoService.getIpLocation();
+      }
+      if (loc) setUserLocation([loc.lat, loc.lng]);
+    } finally {
+      setLocating(false);
     }
-  };
+  }, []);
 
   return (
-    <>
+    <div className="flex flex-col h-[100dvh] overflow-hidden">
       {session ? (
         <HeaderAuthenticated userName={session.user?.name || undefined} />
       ) : (
         <HeaderPublic />
       )}
 
-      <div className="min-h-screen p-8 bg-white dark:bg-gray-900">
-        <h1 className="text-3xl font-bold mb-8 gradient-text">
-          Carte Interactive
-        </h1>
+      {/* Zone carte : remplit tout l'espace restant, sur tout écran (flex-1 + min-h-0). */}
+      <div className="relative flex-1 min-h-0">
+        <MapView center={center} zoom={zoom} markers={markers} userLocation={userLocation} />
 
-        {/* Map Container */}
-        <div className="h-[600px] mb-8">
-          <MapContainer markers={markers} />
-        </div>
+        {/* Bouton « Ma position » (bas-droite, au-dessus de la carte) */}
+        <button
+          onClick={handleLocate}
+          disabled={locating}
+          title="Centrer sur ma position"
+          aria-label="Centrer sur ma position"
+          className="absolute bottom-6 right-4 z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/95 dark:bg-gray-800/95 backdrop-blur shadow-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-60"
+        >
+          {locating ? (
+            <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+          ) : (
+            <LocateFixed className="w-5 h-5 text-blue-500" />
+          )}
+          <span className="hidden sm:inline">Ma position</span>
+        </button>
 
-        {/* Search Bar Below Map */}
-        <div className="max-w-4xl mx-auto">
+        {/* Barre de recherche flottante (au-dessus de la carte Leaflet) */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] w-[92%] max-w-xl px-1">
           <form onSubmit={handleSearch}>
-            <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl shadow-blue-500/20 dark:shadow-blue-400/10 border border-blue-100 dark:border-gray-700 hover:shadow-3xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/20 transition-all duration-500">
-              <div className="flex items-center gap-3 flex-1 px-4">
-                <svg className="w-6 h-6 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Rechercher sur la carte..."
-                  className="flex-1 py-4 bg-transparent outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-lg"
-                />
-                {isSearching && (
-                  <div className="spinner w-5 h-5"></div>
-                )}
-              </div>
-              <button
-                type="submit"
-                className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-all"
-                title="Rechercher"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
+            <div className="flex items-center gap-2 p-1.5 bg-white/95 dark:bg-gray-800/95 backdrop-blur rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+              <Search className="w-5 h-5 text-blue-500 dark:text-blue-400 ml-2 flex-shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher un commerce sur la carte…"
+                className="flex-1 min-w-0 py-2.5 bg-transparent outline-none text-sm md:text-base text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+              />
+              {isSearching ? (
+                <Loader2 className="w-5 h-5 text-blue-500 animate-spin mr-2 flex-shrink-0" />
+              ) : (
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors flex-shrink-0"
+                >
+                  Rechercher
+                </button>
+              )}
             </div>
           </form>
 
-          {/* Results Counter */}
-          {searchQuery.trim() && (
-            <div className="mt-4 text-center">
-              <p className="text-gray-600 dark:text-gray-400">
-                <span className="font-bold text-blue-600 dark:text-blue-400">{filteredResults.length}</span> résultat{filteredResults.length > 1 ? 's' : ''} trouvé{filteredResults.length > 1 ? 's' : ''}
-              </p>
-            </div>
-          )}
+          {/* Compteur de résultats */}
+          <div className="mt-2 flex justify-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 dark:bg-gray-800/95 backdrop-blur shadow text-xs font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+              <MapPin className="w-3.5 h-3.5 text-blue-500" />
+              {markers.length} commerce{markers.length > 1 ? 's' : ''} sur la carte
+            </span>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

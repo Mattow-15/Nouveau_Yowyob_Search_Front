@@ -16,7 +16,7 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         theme: state.theme,
         filters: state.filters,
-        history: state.history,
+        userHistory: state.userHistory,
       }),
     }
   )
@@ -29,7 +29,7 @@ export const useSearchStore = () => {
     query: state.query,
     filters: state.filters,
     isSearching: state.isSearching,
-    history: state.history,
+    userHistory: state.userHistory,
     setSearchQuery: state.setSearchQuery,
     setFilters: state.setFilters,
     resetFilters: state.resetFilters,

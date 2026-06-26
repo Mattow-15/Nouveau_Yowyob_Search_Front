@@ -54,7 +54,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
-  const routeLayerRef = useRef<L.Polyline | null>(null);
+  const routeLayerRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
 
   // 1. Initialize the map ONCE
@@ -122,6 +122,17 @@ export const MapView: React.FC<MapViewProps> = ({
       leafletMarker.bindPopup(popupContent, { className: 'rounded-lg shadow-lg' });
       markersLayerRef.current!.addLayer(leafletMarker);
     });
+
+    // Ajuste la vue pour montrer TOUS les marqueurs (sauf si un itinéraire est affiché,
+    // qui gère son propre cadrage). Sans ça, des marqueurs pouvaient être hors écran.
+    if (mapRef.current && markers.length > 0 && (!route || route.length === 0)) {
+      const bounds = L.latLngBounds(markers.map((m) => m.position));
+      if (markers.length === 1) {
+        mapRef.current.setView(markers[0].position, 15);
+      } else {
+        mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      }
+    }
   }, [markers]);
 
   // 4. Update user location marker
@@ -154,14 +165,46 @@ export const MapView: React.FC<MapViewProps> = ({
 
     // Add new route
     if (route && route.length > 0) {
-      routeLayerRef.current = L.polyline(route, {
-        color: '#0666FF',
+      const routeGroup = L.layerGroup().addTo(mapRef.current);
+      routeLayerRef.current = routeGroup;
+
+      let outerColor = '#1E3A8A'; // Dark Blue
+      let innerColor = '#3B82F6'; // Bright Blue
+      let dashArray: string | undefined = undefined;
+
+      if (transportMode === 'walking') {
+        outerColor = '#064E3B'; // Dark Green
+        innerColor = '#10B981'; // Bright Green
+        dashArray = '10, 10';
+      } else if (transportMode === 'cycling') {
+        outerColor = '#4C1D95'; // Dark Purple
+        innerColor = '#8B5CF6'; // Bright Purple
+      }
+
+      // Outer shadow/border line
+      L.polyline(route, {
+        color: outerColor,
+        weight: 8,
+        opacity: 0.5,
+      }).addTo(routeGroup);
+
+      // Inner visible line
+      const innerLine = L.polyline(route, {
+        color: innerColor,
         weight: 4,
-        opacity: 0.7,
-        dashArray: '10, 10',
-      }).addTo(mapRef.current);
+        opacity: 1.0,
+        dashArray: dashArray,
+      }).addTo(routeGroup);
+
+      // Fit bounds to show the entire route
+      mapRef.current.fitBounds(innerLine.getBounds(), {
+        padding: [50, 50],
+        maxZoom: 16,
+        animate: true,
+        duration: 1.5
+      });
     }
-  }, [route]);
+  }, [route, transportMode]);
 
   return (
     <div

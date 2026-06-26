@@ -46,31 +46,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.warn("⚠️ [AUTH] Login failed: Success is false or user missing");
           return null;
         } catch (error: any) {
-          const errorCode = error?.code;
-          console.error(`❌ [AUTH] Error during login: ${error.message} (Code: ${errorCode})`);
+          const errorCode = error?.code || '';
+          const errorMessage = error?.message || 'Erreur inconnue';
+          console.error(`❌ [AUTH] Error during login: ${errorMessage} (Code: ${errorCode})`);
 
-          // Si le backend rejette explicitement (Mauvais mot de passe / Email inconnu)
-          if (errorCode === 'HTTP_400' || errorCode === 'HTTP_401') {
-
-            // SPECIAL CHECK: Test Accounts
-            // Si c'est un compte de test connu (admin@... / user@...), on force le fallback local
-            // car ces comptes n'existent probablement PAS dans le backend réel.
+          // Si le backend retourne 401 (mauvais mot de passe) pour un vrai compte → refus direct
+          if (errorCode === 'HTTP_401') {
             const isTestAccount = ['admin@yowyob.com', 'user@yowyob.com'].includes(credentials.email as string);
-
-            if (isTestAccount) {
-              console.warn("⚠️ Compte de test détecté. Fallback vers la base locale malgré l'erreur 400/401.");
-            } else {
-              console.error("❌ Refus du backend (Identifiants invalides):", error.message);
-              return null; // NextAuth affichera une erreur d'authentification standard pour les vrais comptes
+            if (!isTestAccount) {
+              console.error("❌ Refus du backend (Identifiants invalides - 401):", errorMessage);
+              return null;
             }
+            console.warn("⚠️ Compte test: fallback local malgré 401");
           }
 
-          // Pour les autres erreurs (500, Timeout, Réseau inaccessible) ou Comptes de Test, on tente le fallback
-          console.warn(`⚠️ Backend inaccessible ou Test Account (${error.message}). Tentative avec la base locale...`);
+          // Pour HTTP 400 (user not found), on laisse le fallback agir pour tous les comptes
+          // Pour les erreurs réseau/serveur (5xx, timeout), on tente aussi le fallback
+          console.warn(`⚠️ Backend inaccessible ou erreur (${errorMessage}). Tentative fallback local...`);
 
-          // Fallback: Tentative avec la base de données locale
+          // Fallback: Tentative avec la base de données locale (comptes de démo)
           const localUser = verifyUser(credentials.email as string, credentials.password as string);
           if (localUser) {
+            console.log('✅ [AUTH] Fallback local réussi pour:', localUser.email);
             return {
               id: localUser.id,
               email: localUser.email,
@@ -81,6 +78,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             };
           }
 
+          console.warn("❌ [AUTH] Fallback local échoué. Aucun utilisateur trouvé.");
           return null;
         }
       },

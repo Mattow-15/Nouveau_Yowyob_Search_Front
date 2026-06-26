@@ -1,28 +1,63 @@
 export interface SearchResult {
   id: string;
-  name: string;
-  description: string;
-  price: number;
-  type: 'product' | 'service' | 'shop';
-  category: string;
-  city: string;
+  title?: string;
+  name?: string;
+  description?: string;
+  price?: number;
+  category?: string;
+  serviceType?: string;
+  city?: string;
   quartier?: string;
-  rating: number;
-  detailsUrl?: string;
-  // UI specific fields that might be missing from backend
-  images: string[];
-  shop: {
-    name: string;
-    address: string;
-    email?: string;
-    phone?: string;
-    description?: string;
-  };
-  location: {
+  street?: string;
+  rating?: number;
+  reviewsCount?: number;
+  reviewCount?: number;   // alias ES (KERNEL_ORG indexe ce champ sous ce nom)
+  latitude?: number;
+  longitude?: number;
+  imageUrl?: string;
+  images?: string[];
+  phone?: string;
+  website?: string;
+  openingHours?: string;
+  source?: string;
+
+  location?: {
     lat: number;
     lng: number;
   };
-  latitude?: number;
-  longitude?: number;
-  tags: string[];
+  shop?: {
+    id?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    description?: string;
+    address?: string;
+    logoUrl?: string;
+  };
+  tags?: string[];
+  detailsUrl?: string;
+  type?: string;
+
+  // ── Nouveaux champs Google Places ─────────────────────────────
+  openNow?: boolean;
+  priceLevel?: number;
+  reviewsSummary?: string;
+  googleMapsUrl?: string;
+}
+
+export interface SearchResponse {
+  results: SearchResult[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+export interface AiSearchResponse {
+  aiAnswer: string;
+  intent: string;
+  rewrittenQuery: string;
+  sources: SearchResult[];
+  processingTimeMs: number;
+  aiMode: boolean;
+  success?: boolean;
 }
