@@ -1,0 +1,49 @@
+name: Deploy (server)
+on:
+  workflow_run:
+    workflows: ["Publish Docker image (GHCR)"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: deploy-search-frontend
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: ${{ github.repository == 'yowyob/search-frontend' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - id: img
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "image=ghcr.io/${REPO}:sha-${SHA:0:7}" >> "$GITHUB_OUTPUT"
+      - name: Préparer la clé SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "${{ vars.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Copier le compose
+        run: |
+          scp -i ~/.ssh/id_deploy .github/docker-compose.prod.yml \
+            "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:${{ vars.DEPLOY_DIR }}/docker-compose.prod.yml"
+      - name: Pull + up
+        env:
+          SEARCH_FRONTEND_IMAGE: ${{ steps.img.outputs.image }}
+          SEARCH_FRONTEND_AUTH_SECRET: ${{ secrets.SEARCH_FRONTEND_AUTH_SECRET }}
+        run: |
+          ssh -i ~/.ssh/id_deploy "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}" "
+            set -e
+            cd '${{ vars.DEPLOY_DIR }}'
+            export SEARCH_FRONTEND_IMAGE='${SEARCH_FRONTEND_IMAGE}'
+            export SEARCH_FRONTEND_AUTH_SECRET='${SEARCH_FRONTEND_AUTH_SECRET}'
+            docker pull \"\$SEARCH_FRONTEND_IMAGE\"
+            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml ps
+            docker image prune -f
+          "

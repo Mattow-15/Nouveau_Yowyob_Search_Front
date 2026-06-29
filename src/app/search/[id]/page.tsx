@@ -479,7 +479,7 @@ export default function ProductDetailsPage() {
                                 markers={[{
                                     id: product.id,
                                     position: productActualLocation || [3.848, 11.5021],
-                                    title: product.title,
+                                    title: product.title || product.name || 'Résultat',
                                     description: product.city || ''
                                 }]}
                                 userLocation={userLocation || undefined}

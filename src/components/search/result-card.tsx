@@ -62,7 +62,7 @@ export default function ResultCard({ result }: ResultCardProps) {
         {result.imageUrl ? (
           <Image
             src={result.imageUrl}
-            alt={result.title}
+            alt={result.title || result.name || 'Résultat'}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             unoptimized

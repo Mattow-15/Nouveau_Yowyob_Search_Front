@@ -1,0 +1,28 @@
+# Front YowYob Search (Next.js) — PRODUCTION. Image GHCR (build GitHub Actions).
+services:
+  search-front:
+    image: "${SEARCH_FRONTEND_IMAGE:?SEARCH_FRONTEND_IMAGE requis}"
+    container_name: search-frontend
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      NEXTAUTH_URL: https://search.yowyob.com
+      AUTH_URL: https://search.yowyob.com
+      NEXTAUTH_SECRET: "${SEARCH_FRONTEND_AUTH_SECRET:?SEARCH_FRONTEND_AUTH_SECRET requis}"
+      AUTH_SECRET: "${SEARCH_FRONTEND_AUTH_SECRET:?SEARCH_FRONTEND_AUTH_SECRET requis}"
+      AUTH_TRUST_HOST: "true"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.search-front.rule=Host(`search.yowyob.com`)"
+      - "traefik.http.routers.search-front.entrypoints=websecure"
+      - "traefik.http.routers.search-front.tls=true"
+      - "traefik.http.routers.search-front.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.search-front.priority=10"
+      - "traefik.http.services.search-front.loadbalancer.server.port=3000"
+      - "traefik.docker.network=yowyob"
+    networks:
+      - yowyob
+networks:
+  yowyob:
+    external: true
+    name: yowyob

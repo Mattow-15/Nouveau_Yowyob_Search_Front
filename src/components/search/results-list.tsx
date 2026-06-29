@@ -7,27 +7,12 @@
 'use client';
 
 import React from 'react';
-import { ResultCard } from './result-card';
+import ResultCard from './result-card';
+import type { SearchResult } from '@/types/search';
 import { CardSkeleton } from '@/components/ui/skeleton';
 
 interface ResultsListProps {
-  items: Array<{
-    id: string;
-    name: string;
-    description: string;
-    type: 'product' | 'service' | 'shop';
-    price?: number;
-    images: string[];
-    shop: {
-      name: string;
-      address: string;
-    };
-    tags?: string[];
-    location?: {
-      lat: number;
-      lng: number;
-    };
-  }>;
+  items: SearchResult[];
   loading?: boolean;
   onItemClick?: (id: string) => void;
 }
@@ -68,7 +53,7 @@ export const ResultsList: React.FC<ResultsListProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
       {items.map((item) => (
-        <ResultCard key={item.id} item={item} onClick={onItemClick} />
+        <div key={item.id} onClick={() => onItemClick?.(item.id)}><ResultCard result={item} /></div>
       ))}
     </div>
   );

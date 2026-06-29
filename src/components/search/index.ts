@@ -6,6 +6,6 @@
 
 export { SearchBar } from './search-bar';
 export { SearchFilters } from './search-filters';
-export { ResultCard } from './result-card';
+export { default as ResultCard } from './result-card';
 export { ResultsList } from './results-list';
 export { Pagination } from './pagination';
