@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
+import { UserLocationBadge } from './user-location-badge';
 import Image from 'next/image';
 
 interface HeaderAuthenticatedProps {
@@ -67,6 +68,7 @@ export const HeaderAuthenticated: React.FC<HeaderAuthenticatedProps> = ({ userNa
 
           {/* Actions */}
           <div className="hidden md:flex items-center gap-4">
+            <UserLocationBadge />
             {userName && (
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">
                 Bonjour, <span className="text-blue-600 dark:text-blue-400 font-bold">{userName}</span>

@@ -1,3 +1,6 @@
+/* Modern Fonts — @import doit précéder toute autre règle (exigence CSS/Turbopack) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -31,9 +34,6 @@
   --muted-foreground: #94a3b8;
   --accent: #0ea5e9;
 }
-
-/* Modern Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 /* Reset */
 * {

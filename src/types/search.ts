@@ -20,6 +20,10 @@ export interface SearchResult {
   website?: string;
   openingHours?: string;
   source?: string;
+  /** Collection d'origine côté backend prod (organization, administration, products…). Présent ⇒ donnée du core. */
+  collection?: string;
+  /** Vrai si le résultat provient du backend de production (données du « core »). */
+  isCore?: boolean;
 
   location?: {
     lat: number;

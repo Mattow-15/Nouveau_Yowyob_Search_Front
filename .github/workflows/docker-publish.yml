@@ -30,7 +30,7 @@ jobs:
           file: .github/Dockerfile
           push: true
           build-args: |
-            NEXT_PUBLIC_API_URL=https://search.yowyob.com
+            NEXT_PUBLIC_API_URL=/api/gateway
           tags: |
             ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha }}
             ${{ steps.meta.outputs.image }}:main

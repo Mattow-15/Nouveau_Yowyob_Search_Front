@@ -2,7 +2,7 @@
 import React from 'react';
 import { SearchResult } from '@/types/search';
 import { ShoppingBag } from 'lucide-react';
-import { getExternalUrl } from './get-external-url';
+import { openExternalLink } from '@/store/external-link-store';
 
 interface ProductCarouselProps {
   results: SearchResult[];
@@ -27,7 +27,7 @@ export function ProductCarousel({ results }: ProductCarouselProps) {
           <div
             key={item.id}
             className="flex-shrink-0 w-36 border border-[#dadce0] dark:border-gray-700 rounded-xl overflow-hidden hover:shadow-md transition-shadow cursor-pointer bg-white dark:bg-gray-900"
-            onClick={() => window.open(getExternalUrl(item), '_blank', 'noopener,noreferrer')}
+            onClick={() => openExternalLink(item)}
           >
             {/* Image */}
             <div className="h-28 w-full bg-gray-50 dark:bg-gray-800 relative">

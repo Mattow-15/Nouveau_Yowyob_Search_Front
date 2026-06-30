@@ -18,7 +18,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         console.log("🔍 [AUTH] Attempting login for:", credentials?.email);
 
         if (!credentials?.email || !credentials?.password) {
@@ -26,11 +26,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // IP réelle de l'utilisateur (NextAuth appelle le backend en server-to-server,
+        // on transmet donc l'IP du navigateur pour que la géoloc backend soit correcte).
+        const forwardedFor = (request as any)?.headers?.get?.('x-forwarded-for') || '';
+        const clientIp = forwardedFor.split(',')[0].trim();
+
         try {
           const response = await httpClient.post<any>(API_ENDPOINTS.AUTH_LOGIN, {
             email: credentials.email,
             password: credentials.password,
-          });
+          }, clientIp ? { headers: { 'x-forwarded-for': clientIp } } : undefined);
 
           console.log("✅ [AUTH] Backend response success:", response?.success);
 
@@ -41,6 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: response.user.name,
               accessToken: response.accessToken,
               refreshToken: response.refreshToken,
+              location: response.location ?? null,
             };
           }
           console.warn("⚠️ [AUTH] Login failed: Success is false or user missing");
@@ -107,6 +113,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
+        token.location = (user as any).location ?? null;
       }
 
       // 2. Connexion via Google (Token Exchange)
@@ -124,6 +131,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.refreshToken = response.refreshToken;
             token.name = response.user.name;
             token.email = response.user.email;
+            token.location = response.location ?? null;
             console.log("✅ [JWT Callback] Token exchanged successfully!");
           }
         } catch (error: any) {
@@ -144,6 +152,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         (session.user as any).id = token.id as string;
         (session.user as any).accessToken = token.accessToken as string;
+        (session.user as any).location = (token as any).location ?? null;
         session.user.name = token.name as string;
         session.user.email = token.email as string;
         // console.log("📦 [Session Callback] Session built for:", session.user.email, "Has Token:", !!token.accessToken);

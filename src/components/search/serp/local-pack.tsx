@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { SearchResult } from '@/types/search';
 import { StarRating } from './star-rating';
-import { getExternalUrl } from './get-external-url';
+import { openExternalLink } from '@/store/external-link-store';
 import { getDirectionsUrl, openDirections } from './get-directions-url';
 
 interface LocalPackProps {
@@ -89,7 +89,7 @@ export function LocalPackSection({ results, query }: LocalPackProps) {
               className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-[#f8f9fa] dark:hover:bg-gray-700/50 transition-colors ${item.id === selected ? 'bg-[#e8f0fe] dark:bg-blue-900/20' : ''}`}
               onClick={() => {
                 setSelected(item.id === selected ? null : item.id);
-                window.open(getExternalUrl(item), '_blank', 'noopener,noreferrer');
+                openExternalLink(item);
               }}
             >
               {/* Number pin */}

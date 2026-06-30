@@ -61,7 +61,27 @@ class SearchService {
 
       const response = await httpClient.get<any>(`${API_ENDPOINTS.SEARCH}?${params.toString()}`);
 
-      const results = (response.results || []).map((item: any) => ({
+      // Le back de PRODUCTION (yowyob-search générique) renvoie les champs réels du
+      // document dans `source` (objet), avec collection/id/title/latitude/longitude au
+      // premier niveau. On aplatit pour retrouver name/price/city/website/etc.
+      // Le back LOCAL renvoie déjà les champs à plat (pas de `source` objet) → inchangé.
+      const flattened = (response.results || []).map((item: any) => {
+        if (item && item.source && typeof item.source === 'object') {
+          const s = item.source;
+          return {
+            ...s,
+            id: item.id ?? s.id,
+            title: item.title ?? s.title ?? s.name,
+            latitude: item.latitude ?? s.latitude ?? s.lat ?? null,
+            longitude: item.longitude ?? s.longitude ?? s.lng ?? s.lon ?? null,
+            category: s.category ?? item.collection,
+            collection: item.collection,
+          };
+        }
+        return item;
+      });
+
+      const results = flattened.map((item: any) => ({
         ...item,
         name: item.name || item.title || 'Sans nom', // Map title to name if needed
         type: (item.type?.toLowerCase() === 'listing' ? 'product' : (item.type?.toLowerCase() === 'user' ? 'shop' : item.type?.toLowerCase())) || 'product',
@@ -83,11 +103,18 @@ class SearchService {
         quartier: item.quartier || '',
         tags: item.tags || [item.category].filter(Boolean) || [],
         detailsUrl: item.website || (item.title ? `https://www.google.com/search?q=${encodeURIComponent(item.title + (item.city ? ' ' + item.city : ''))}` : `/search/${item.id}`),
+        // Donnée du « core » : provient du backend prod (toujours indexée avec une `collection`).
+        collection: item.collection,
+        isCore: Boolean(item.collection),
       }));
+
+      // Priorité d'affichage : les données du core (backend prod) d'abord.
+      // Tri stable → l'ordre de pertinence est préservé à l'intérieur de chaque groupe.
+      results.sort((a: SearchResult, b: SearchResult) => Number(b.isCore) - Number(a.isCore));
 
       return {
         results,
-        total: response.total || results.length,
+        total: response.total ?? response.count ?? results.length, // prod renvoie `count`
         page: filters.page || 1,
         success: true
       };
@@ -132,7 +159,12 @@ class SearchService {
         quartier: item.quartier || '',
         tags: item.tags || [item.category].filter(Boolean) || [],
         detailsUrl: item.website || (item.title ? `https://www.google.com/search?q=${encodeURIComponent(item.title + (item.city ? ' ' + item.city : ''))}` : `/search/${item.id}`),
+        collection: item.collection ?? item.source?.collection,
+        isCore: Boolean(item.collection ?? item.source?.collection),
       }));
+
+      // Sources IA : core d'abord également.
+      sources.sort((a: SearchResult, b: SearchResult) => Number(b.isCore) - Number(a.isCore));
 
       return {
         aiAnswer: response.aiAnswer || '',

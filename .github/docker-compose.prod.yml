@@ -11,6 +11,10 @@ services:
       NEXTAUTH_SECRET: "${SEARCH_FRONTEND_AUTH_SECRET:?SEARCH_FRONTEND_AUTH_SECRET requis}"
       AUTH_SECRET: "${SEARCH_FRONTEND_AUTH_SECRET:?SEARCH_FRONTEND_AUTH_SECRET requis}"
       AUTH_TRUST_HOST: "true"
+      BACKEND_API_URL: http://yowyob-search:8080
+      BACKEND_API_CLIENT_ID: "${BACKEND_API_CLIENT_ID:?BACKEND_API_CLIENT_ID requis}"
+      BACKEND_API_KEY: "${BACKEND_API_KEY:?BACKEND_API_KEY requis}"
+      BACKEND_API_TENANT_ID: "${BACKEND_API_TENANT_ID:?BACKEND_API_TENANT_ID requis}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.search-front.rule=Host(`search.yowyob.com`)"

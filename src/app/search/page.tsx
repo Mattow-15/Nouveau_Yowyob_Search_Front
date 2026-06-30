@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { SearchBar } from '@/components/search/search-bar';
@@ -42,6 +42,11 @@ function SearchContent() {
   
   const { addToHistory } = useSearchStore();
 
+  // Garde anti-concurrence : seule la DERNIÈRE recherche lancée a le droit de
+  // mettre à jour l'état. Évite qu'une requête lente/échouée (la prod timeout
+  // parfois) revienne après et écrase des résultats déjà affichés.
+  const latestRequest = useRef(0);
+
   // Sync query with URL
   useEffect(() => {
     const urlQuery = searchParams.get('q') || '';
@@ -51,6 +56,7 @@ function SearchContent() {
   // Fetch results (Parallelized AI RAG & Classic search for Google SERP experience)
   const fetchResults = async () => {
     if (!query && !hasSearched) return;
+    const seq = ++latestRequest.current;
     setIsLoading(true);
 
     let typeFilter: string | undefined = activeTab === 'all' ? undefined : activeTab;
@@ -68,8 +74,12 @@ function SearchContent() {
         })
       ]);
 
+      // Une recherche plus récente est partie entre-temps → on ignore ce retour
+      // (sinon une réponse obsolète/lente écraserait les résultats à l'écran).
+      if (seq !== latestRequest.current) return;
+
       let sourcesList: SearchResult[] = [];
-      
+
       // 1. Process AI RAG search
       if (aiRes.status === 'fulfilled' && aiRes.value.success) {
         setAiResponse(aiRes.value);
@@ -79,23 +89,20 @@ function SearchContent() {
       }
 
       // 2. Process Standard Search results
-      if (classicRes.status === 'fulfilled' && classicRes.value.success) {
-        setResults(classicRes.value.results);
-        
-        if (classicRes.value.results.length > 0) {
-          setSelectedBusiness(classicRes.value.results[0]);
-        } else if (sourcesList.length > 0) {
-          setSelectedBusiness(sourcesList[0]);
-        } else {
-          setSelectedBusiness(null);
-        }
+      const classicOk = classicRes.status === 'fulfilled' && classicRes.value.success;
+      if (classicOk) {
+        // Réponse fiable (même vide) → on l'applique telle quelle.
+        const list = classicRes.value.results;
+        setResults(list);
+        setSelectedBusiness(list[0] ?? sourcesList[0] ?? null);
       } else if (sourcesList.length > 0) {
+        // Échec de la recherche classique mais l'IA a des sources → repli.
         setResults(sourcesList);
         setSelectedBusiness(sourcesList[0]);
-      } else {
-        setResults([]);
-        setSelectedBusiness(null);
       }
+      // Sinon : la requête a ÉCHOUÉ (réseau/timeout/401) et aucun repli.
+      // On NE vide PAS la liste — on garde l'affichage précédent plutôt que de
+      // faire « clignoter » des résultats déjà visibles.
 
       // 3. Save to search history
       if (query && query.trim().length > 0) {
@@ -106,12 +113,13 @@ function SearchContent() {
       }
     } catch (error) {
       console.error('Error fetching results:', error);
-      setResults([]);
-      setSelectedBusiness(null);
-      setAiResponse(null);
+      // En cas d'exception inattendue, idem : ne pas effacer si requête obsolète.
+      if (seq === latestRequest.current) setAiResponse(null);
     } finally {
-      setIsLoading(false);
-      setHasSearched(true);
+      if (seq === latestRequest.current) {
+        setIsLoading(false);
+        setHasSearched(true);
+      }
     }
   };
 

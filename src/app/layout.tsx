@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 import { Footer } from '@/components/layout/footer';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Toaster } from 'sonner';
+import ExternalLinkDialog from '@/components/search/external-link-dialog';
 
 export default function RootLayout({
   children,
@@ -37,6 +38,7 @@ export default function RootLayout({
               {children}
               <Sidebar />
               <Footer />
+              <ExternalLinkDialog />
               <Toaster position="top-right" richColors closeButton />
             </QueryProvider>
           </ThemeProvider>
