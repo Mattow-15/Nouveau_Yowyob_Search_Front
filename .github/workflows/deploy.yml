@@ -36,6 +36,8 @@ jobs:
         env:
           SEARCH_FRONTEND_IMAGE: ${{ steps.img.outputs.image }}
           SEARCH_FRONTEND_AUTH_SECRET: ${{ secrets.SEARCH_FRONTEND_AUTH_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           BACKEND_API_CLIENT_ID: ${{ secrets.BACKEND_API_CLIENT_ID }}
           BACKEND_API_KEY: ${{ secrets.BACKEND_API_KEY }}
           BACKEND_API_TENANT_ID: ${{ secrets.BACKEND_API_TENANT_ID }}
@@ -45,6 +47,8 @@ jobs:
             cd '${{ vars.DEPLOY_DIR }}'
             export SEARCH_FRONTEND_IMAGE='${SEARCH_FRONTEND_IMAGE}'
             export SEARCH_FRONTEND_AUTH_SECRET='${SEARCH_FRONTEND_AUTH_SECRET}'
+            export GOOGLE_CLIENT_ID='${GOOGLE_CLIENT_ID}'
+            export GOOGLE_CLIENT_SECRET='${GOOGLE_CLIENT_SECRET}'
             export BACKEND_API_CLIENT_ID='${BACKEND_API_CLIENT_ID}'
             export BACKEND_API_KEY='${BACKEND_API_KEY}'
             export BACKEND_API_TENANT_ID='${BACKEND_API_TENANT_ID}'
