@@ -116,31 +116,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.location = (user as any).location ?? null;
       }
 
-      // 2. Connexion via Google (Token Exchange)
+      // 2. Connexion via Google. NextAuth a déjà validé le jeton Google.
+      // Le kernel ne fournit pas encore d'endpoint /api/auth/google : on crée donc
+      // la session frontend sans appeler un endpoint inexistant.
       if (account?.provider === 'google' && account.id_token) {
-        try {
-          console.log("🌐 [JWT Callback] Google Login detected. Exchanging token with Backend...");
-
-          const response = await httpClient.post<any>(API_ENDPOINTS.AUTH_GOOGLE, {
-            token: account.id_token
-          });
-
-          if (response && response.success && response.user) {
-            token.id = response.user.id;
-            token.accessToken = response.accessToken;
-            token.refreshToken = response.refreshToken;
-            token.name = response.user.name;
-            token.email = response.user.email;
-            token.location = response.location ?? null;
-            console.log("✅ [JWT Callback] Token exchanged successfully!");
-          }
-        } catch (error: any) {
-          console.error("❌ Token exchange failed:", error);
-          if (error.response) {
-            console.error("❌ Response Status:", error.response.status);
-            console.error("❌ Response Data:", await error.response.json().catch(() => "No JSON"));
-          }
-        }
+        token.id = token.sub;
+        token.location = null;
       }
 
       // Log pour vérifier la persistance

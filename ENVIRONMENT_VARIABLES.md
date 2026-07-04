@@ -42,6 +42,7 @@ Le front peut taper le backend de deux façons (`src/lib/api/http-client.ts`) :
 | Variable | Rôle | Exemple | Requis ? |
 |---|---|---|---|
 | `BACKEND_API_URL` | Cible réelle du proxy (gateway back) | `https://search.yowyob.com` | Mode proxy |
+| `AUTH_BACKEND_URL` | Cible kernel dédiée aux routes `/api/auth/*` | `https://votre-kernel` | Connexion réelle |
 | `BACKEND_API_CLIENT_ID` | Injecté en en-tête **`X-Client-Id`** (identité machine Kernel) | _(fourni par l'admin Kernel)_ | Si le back l'exige |
 | `BACKEND_API_KEY` | Injecté en en-tête **`X-Api-Key`** (identité machine Kernel) | _(fourni par l'admin Kernel)_ | Si le back l'exige |
 | `BACKEND_API_TENANT_ID` | Injecté en en-tête **`X-Tenant-Id`** (optionnel, schéma Kernel) | _(fourni par l'admin Kernel)_ | Si le back l'exige |

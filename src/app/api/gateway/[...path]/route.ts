@@ -22,6 +22,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+const AUTH_BACKEND_URL = (process.env.AUTH_BACKEND_URL || BACKEND_URL).replace(/\/$/, '');
 const CLIENT_ID = process.env.BACKEND_API_CLIENT_ID || '';
 const API_KEY = process.env.BACKEND_API_KEY || '';
 const TENANT_ID = process.env.BACKEND_API_TENANT_ID || '';
@@ -36,7 +37,10 @@ async function proxy(
   ctx: { params: Promise<{ path?: string[] }> }
 ): Promise<NextResponse> {
   const { path } = await ctx.params;
-  const target = `${BACKEND_URL}/${(path || []).join('/')}${req.nextUrl.search}`;
+  const relativePath = (path || []).join('/');
+  const isKernelLogin = relativePath === 'api/auth/login';
+  const targetBase = relativePath.startsWith('api/auth/') ? AUTH_BACKEND_URL : BACKEND_URL;
+  const target = `${targetBase}/${relativePath}${req.nextUrl.search}`;
 
   const headers = new Headers();
   for (const name of FORWARDED_HEADERS) {
@@ -49,7 +53,18 @@ async function proxy(
   if (TENANT_ID) headers.set('X-Tenant-Id', TENANT_ID);
 
   const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
-  const body = hasBody ? await req.arrayBuffer() : undefined;
+  let body = hasBody ? await req.arrayBuffer() : undefined;
+  if (isKernelLogin && body && body.byteLength > 0) {
+    try {
+      const credentials = JSON.parse(new TextDecoder().decode(body));
+      body = new TextEncoder().encode(JSON.stringify({
+        principal: credentials.principal || credentials.email,
+        password: credentials.password,
+      })).buffer;
+    } catch {
+      return NextResponse.json({ error: 'Invalid login payload' }, { status: 400 });
+    }
+  }
 
   let upstream: Response;
   try {
@@ -70,6 +85,24 @@ async function proxy(
   const resHeaders = new Headers();
   const contentType = upstream.headers.get('content-type');
   if (contentType) resHeaders.set('content-type', contentType);
+
+  if (isKernelLogin && contentType?.includes('application/json')) {
+    const kernelResponse = await upstream.json();
+    const login = kernelResponse?.data;
+    if (upstream.ok && kernelResponse?.success && login?.accessToken) {
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: login.id,
+          email: login.email,
+          name: login.username || login.email,
+        },
+        accessToken: login.accessToken,
+        refreshToken: login.sessionToken,
+      }, { status: upstream.status });
+    }
+    return NextResponse.json(kernelResponse, { status: upstream.status });
+  }
 
   const payload = await upstream.arrayBuffer();
   return new NextResponse(payload, { status: upstream.status, headers: resHeaders });
