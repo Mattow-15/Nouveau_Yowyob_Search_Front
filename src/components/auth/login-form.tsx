@@ -1,17 +1,9 @@
-/**
- * Login Form component
- * @author Matteo Owona, Rouchda Yampen
- */
-
 'use client';
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { GoogleLoginButton } from './google-login-button';
 
 export function LoginForm() {
   const router = useRouter();
@@ -34,119 +26,89 @@ export function LoginForm() {
 
       if (result?.error) {
         setError('Email ou mot de passe incorrect');
-        setIsLoading(false);
         return;
       }
 
-      // Redirection vers la page profile
-      router.push('/profile');
+      router.push('/home');
       router.refresh();
-    } catch (err) {
-      setError('Une erreur est survenue');
+    } catch {
+      setError('Une erreur est survenue, veuillez réessayer');
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="card p-8">
-        {/* Header */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-8">
+
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-black gradient-text mb-2">
+          <h1 className="text-3xl font-black text-blue-600 dark:text-blue-500 mb-1">
             Connexion
           </h1>
-          <p className="text-gray-600">
-            Connectez-vous à votre compte Yowyob
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Connectez-vous avec votre compte Yowyob
           </p>
         </div>
 
-        {/* Demo credentials info */}
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <p className="text-sm font-semibold text-blue-800 mb-2">
-            Comptes de test :
-          </p>
-          <div className="text-xs text-blue-700 space-y-1">
-            <p>📧 admin@yowyob.com / admin123</p>
-            <p>📧 user@yowyob.com / user123</p>
-          </div>
-        </div>
-
-        {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="mb-5 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Input
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="votre@email.com"
-            required
-            leftIcon={
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-              </svg>
-            }
-          />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="votre@email.com"
+              required
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-all"
+            />
+          </div>
 
-          <Input
-            label="Mot de passe"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            leftIcon={
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            }
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Mot de passe
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-all"
+            />
+          </div>
 
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="w-4 h-4 text-blue-600 rounded" />
-              <span className="text-sm text-gray-600">Se souvenir de moi</span>
+              <input type="checkbox" className="w-4 h-4 accent-blue-600 rounded" />
+              <span className="text-sm text-gray-500 dark:text-gray-400">Se souvenir de moi</span>
             </label>
-            <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:text-blue-800">
+            <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
               Mot de passe oublié ?
             </Link>
           </div>
 
-          <Button
+          <button
             type="submit"
-            variant="primary"
-            fullWidth
-            isLoading={isLoading}
+            disabled={isLoading}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors"
           >
-            Se connecter
-          </Button>
+            {isLoading ? 'Connexion…' : 'Se connecter'}
+          </button>
         </form>
 
-        {/* Divider */}
-        <div className="relative my-8">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-gray-500">Ou</span>
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <GoogleLoginButton />
-        </div>
-
-        {/* Register Link */}
-        <div className="text-center">
-          <p className="text-gray-600">
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Pas encore de compte ?{' '}
-            <Link href="/auth/register" className="text-blue-600 hover:text-blue-800 font-semibold">
+            <Link href="/auth/register" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
               S&apos;inscrire
             </Link>
           </p>
@@ -155,4 +117,3 @@ export function LoginForm() {
     </div>
   );
 }
-
