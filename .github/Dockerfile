@@ -7,9 +7,11 @@ COPY package.json package-lock.json* ./
 RUN npm ci --no-audit --no-fund
 COPY . .
 ARG NEXT_PUBLIC_API_URL
+ARG NEXTAUTH_SECRET=build-time-placeholder-overridden-at-runtime
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
 RUN npm run build
 
 FROM node:22-alpine AS run
