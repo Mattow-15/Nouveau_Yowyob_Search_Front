@@ -252,6 +252,7 @@ function SearchContent() {
   const [aiResponse, setAiResponse]     = useState<AiSearchResponse | null>(null);
   const [currentPage, setCurrentPage]   = useState(1);
   const [radius, setRadius]             = useState<number>(SEARCH_CONFIG.DEFAULT_DISTANCE);
+  const [isFallback, setIsFallback]     = useState(false);
 
   const { addToHistory } = useSearchStore();
   const geo = useSmartGeolocation();
@@ -302,6 +303,7 @@ function SearchContent() {
   const fetchResults = async () => {
     if (!query && !hasSearched) return;
     setIsLoading(true);
+    setIsFallback(false);
 
     let typeFilter: string | undefined = activeTab === 'all' ? undefined : activeTab;
     if (typeFilter === 'products') typeFilter = 'product';
@@ -327,12 +329,34 @@ function SearchContent() {
 
       // Résultats classiques (géo-filtrés avec coordonnées) — source de vérité
       let classicResults: SearchResult[] = [];
+      let usedFallback = false;
       if (classicRes.status === 'fulfilled' && classicRes.value.success) {
         classicResults = prioritizeResults(
           classicRes.value.results,
           geo.latitude ?? undefined,
           geo.longitude ?? undefined,
         );
+      }
+
+      // Fallback sans géo : si la recherche géolocalisée ne trouve rien,
+      // relancer sans filtre de proximité pour montrer ce qu'il y a dans la base.
+      if (classicResults.length === 0 && hasCoords) {
+        try {
+          const fallbackRes = await searchService.search({
+            query:      effectiveQuery,
+            type:       typeFilter,
+            page:       1,
+            esCategory: resolvedIntent?.esCategory,
+          });
+          if (fallbackRes.success && fallbackRes.results.length > 0) {
+            classicResults = fallbackRes.results;
+            usedFallback = true;
+          }
+        } catch { /* fallback silencieux */ }
+      }
+
+      setIsFallback(usedFallback);
+      if (classicResults.length > 0) {
         setResults(classicResults);
         setSelectedBusiness(classicResults[0] ?? null);
       } else {
@@ -543,7 +567,19 @@ function SearchContent() {
                     {hasGeo && <span className="block text-sm mt-2 text-gray-400">dans un rayon de {radius} km</span>}
                   </h3>
                 </div>
-              ) : showMap ? (
+              ) : (
+                <>
+                  {/* Bandeau fallback : affiché quand la recherche géo n'a rien trouvé */}
+                  {isFallback && hasGeo && (
+                    <div className="mb-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-sm">
+                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Aucun résultat dans un rayon de {radius} km — voici les résultats disponibles dans toute la base.
+                    </div>
+                  )}
+                {showMap ? (
                 // Layout avec carte : résultats libres à gauche, carte sticky à droite
                 <div className="flex flex-col lg:flex-row gap-6 items-start">
                   <div className="flex-1 min-w-0 flex flex-col gap-6">
@@ -603,6 +639,8 @@ function SearchContent() {
                   )}
                   <SponsoredSection results={bottomAds} position="bottom" />
                 </div>
+                )}
+                </>
               )}
             </div>
 
