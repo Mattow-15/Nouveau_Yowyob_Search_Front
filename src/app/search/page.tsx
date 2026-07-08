@@ -644,8 +644,8 @@ function SearchContent() {
               )}
             </div>
 
-            {/* ── Sidebar droite : service Yowyob suggéré + fiche établissement ── */}
-            {query.trim() && !showMap && (
+            {/* ── Sidebar droite : Yowyob Products + fiche établissement ── */}
+            {query.trim() && (
               <div className="hidden lg:flex flex-col gap-4 w-[320px] flex-shrink-0 sticky top-24">
                 <YowyobServicePanel query={query} />
                 {selectedBusiness && (
