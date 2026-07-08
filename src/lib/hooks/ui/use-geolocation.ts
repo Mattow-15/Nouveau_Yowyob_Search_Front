@@ -141,13 +141,35 @@ export function useSmartGeolocation(): SmartGeolocationState {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         if (cancelled) return;
-        const lat     = position.coords.latitude;
-        const lng     = position.coords.longitude;
-        // Conserver la ville du cache (GPS ne fournit pas le nom de ville)
-        const city    = cached?.state.city    ?? null;
-        const country = cached?.state.country ?? null;
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        // Appliquer immédiatement les coordonnées GPS (sans attendre le reverse geocode)
+        const cachedCity    = cached?.state.city    ?? null;
+        const cachedCountry = cached?.state.country ?? null;
+        setState({ latitude: lat, longitude: lng, city: cachedCity, country: cachedCountry, source: 'gps', error: null, loading: false });
+
+        // Reverse geocode Nominatim pour avoir le vrai nom de quartier/ville
+        // (évite d'afficher la ville IP qui est souvent fausse — ex: Mbankomo au lieu de Melen)
+        let city    = cachedCity;
+        let country = cachedCountry;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
+            { headers: { 'User-Agent': 'YowYob-Frontend-Client' } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data?.address ?? {};
+            // Préférer suburb (quartier précis) → city → town → county
+            city    = addr.suburb ?? addr.neighbourhood ?? addr.city ?? addr.town ?? addr.county ?? cachedCity;
+            country = addr.country ?? cachedCountry;
+          }
+        } catch { /* reverse geocode optionnel — on garde la ville du cache si échec */ }
+
+        if (cancelled) return;
         setState({ latitude: lat, longitude: lng, city, country, source: 'gps', error: null, loading: false });
         writeGeoCache({ latitude: lat, longitude: lng, city, country, source: 'gps' });
       },
