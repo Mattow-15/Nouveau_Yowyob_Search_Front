@@ -75,7 +75,7 @@ const RADIUS_OPTIONS = [5, 10, 30, 50, 100] as const;
 
 function RadiusSelector({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
-    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 select-none">
+    <div className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-full px-3 py-1.5 select-none">
       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
           d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
@@ -449,10 +449,10 @@ function SearchContent() {
       )}
 
       <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
-        <div className="max-w-6xl mx-auto px-6 py-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
 
           {/* Search Bar + menu waffle + indicateurs */}
-          <div className="mb-6">
+          <div className="mb-4">
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <SearchBar
@@ -478,52 +478,51 @@ function SearchContent() {
           </div>
 
           {/* Tabs */}
-          <div className="mb-6">
+          <div className="mb-3">
             <SearchTabs activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
 
           {/* Barre de contrôles */}
-          <div className="flex flex-wrap gap-3 mb-8 items-center">
+          <div className="flex flex-wrap gap-2 mb-4 items-center">
 
-            {/* Toggle carte */}
+            {/* Toggle carte — style léger */}
             <button
               onClick={handleToggleMap}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg text-sm"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all
+                ${showMap
+                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                }`}
             >
-              {showMap ? (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Retirer la carte
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                  </svg>
-                  Afficher sur la carte
-                </>
-              )}
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {showMap
+                  ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                }
+              </svg>
+              {showMap ? 'Masquer la carte' : 'Carte'}
             </button>
 
-            {/* Sélecteur de rayon — visible uniquement si on a des coordonnées */}
+            {/* Sélecteur de rayon */}
             {hasGeo && !geo.loading && (
               <RadiusSelector value={radius} onChange={(v) => { setRadius(v); setCurrentPage(1); }} />
             )}
 
-            {/* Loader IA */}
+            {/* Compteur de résultats */}
+            {!isLoading && hasSearched && results.length > 0 && (
+              <span className="ml-auto text-[13px] text-[#70757a] dark:text-gray-500">
+                {results.length} résultat{results.length > 1 ? 's' : ''}
+              </span>
+            )}
+
+            {/* Loader */}
             {isLoading && (
-              <div className="flex items-center gap-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-4 py-2.5 rounded-xl border border-indigo-100/40 dark:border-indigo-950/20 shadow-sm">
-                <div className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="animate-pulse">Analyse de l&apos;intention et recherche (IA YowYob)...</span>
-                  <span className="text-[10px] opacity-70 font-normal">Interrogation de la base Core KERNEL_ORG en cours</span>
-                </div>
+              <div className="flex items-center gap-2 text-[13px] text-[#70757a] dark:text-gray-500">
+                <svg className="w-4 h-4 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Recherche en cours…
               </div>
             )}
           </div>
@@ -544,7 +543,7 @@ function SearchContent() {
             ) : (
               <button
                 onClick={() => setShowAI(true)}
-                className="inline-flex items-center gap-2 mb-8 text-sm font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 px-4 py-2.5 rounded-xl border border-indigo-100/60 dark:border-indigo-950/30 transition-colors"
+                className="inline-flex items-center gap-2 mb-4 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
               >
                 ✨ Afficher la réponse IA
               </button>
@@ -552,12 +551,12 @@ function SearchContent() {
           )}
 
           {/* Results Section — wrapper flex pour la sidebar Yowyob toujours visible */}
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
 
             {/* ── Colonne principale ── */}
             <div className="flex-1 min-w-0">
               {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
                 </div>
               ) : results.length === 0 && query.trim() !== '' ? (
@@ -568,6 +567,7 @@ function SearchContent() {
                   </h3>
                 </div>
               ) : (
+                <div className="animate-in fade-in duration-300">
                 <>
                   {/* Bandeau fallback : affiché quand la recherche géo n'a rien trouvé */}
                   {isFallback && hasGeo && (
@@ -641,6 +641,7 @@ function SearchContent() {
                 </div>
                 )}
                 </>
+                </div>
               )}
             </div>
 

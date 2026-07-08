@@ -34,7 +34,7 @@ export function OrganicResult({ item, onClick }: OrganicResultProps) {
   };
 
   return (
-    <div className="group py-4 border-b border-[#ebebeb] dark:border-gray-800 last:border-0">
+    <div className="group py-5 border-b border-[#ebebeb] dark:border-gray-800 last:border-0 transition-all duration-150 hover:bg-[#f8f9fa]/60 dark:hover:bg-gray-800/30 -mx-2 px-2 rounded-lg">
       {/* Breadcrumb / URL line */}
       <div className="flex items-center gap-1.5 mb-0.5">
         {displayImage ? (
