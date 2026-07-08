@@ -9,25 +9,10 @@
 import React from 'react';
 import ResultCard from './result-card';
 import { CardSkeleton } from '@/components/ui/skeleton';
+import { SearchResult } from '@/types/search';
 
 interface ResultsListProps {
-  items: Array<{
-    id: string;
-    name: string;
-    description: string;
-    type: 'product' | 'service' | 'shop';
-    price?: number;
-    images: string[];
-    shop: {
-      name: string;
-      address: string;
-    };
-    tags?: string[];
-    location?: {
-      lat: number;
-      lng: number;
-    };
-  }>;
+  items: SearchResult[];
   loading?: boolean;
   onItemClick?: (id: string) => void;
 }
@@ -35,7 +20,6 @@ interface ResultsListProps {
 export const ResultsList: React.FC<ResultsListProps> = ({
   items,
   loading = false,
-  onItemClick,
 }) => {
   if (loading) {
     return (

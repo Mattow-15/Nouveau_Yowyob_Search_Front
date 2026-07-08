@@ -4,7 +4,6 @@ import { SearchResult } from '@/types/search';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { getDirectionsUrl, openDirections } from './serp/get-directions-url';
-import { CoreBadge } from './core-badge';
 
 interface ResultCardProps {
   result: SearchResult;
@@ -60,11 +59,10 @@ export default function ResultCard({ result }: ResultCardProps) {
     >
       {/* Image */}
       <div className="relative h-44 w-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-        {result.isCore && <CoreBadge className="absolute top-2 left-2 z-10 shadow" />}
         {result.imageUrl ? (
           <Image
             src={result.imageUrl}
-            alt={result.title ?? result.name ?? ''}
+            alt={result.title ?? ''}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             unoptimized

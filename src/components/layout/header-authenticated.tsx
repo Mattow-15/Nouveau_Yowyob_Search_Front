@@ -11,9 +11,8 @@ import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
-import { UserLocationBadge } from './user-location-badge';
 import { YowyobProductsMenu } from './yowyob-products-menu';
-import Image from 'next/image';
+import { YOWYOB_SERVICES } from '@/lib/constants/yowyob-services';
 
 interface HeaderAuthenticatedProps {
   userName?: string;
@@ -68,14 +67,13 @@ export const HeaderAuthenticated: React.FC<HeaderAuthenticatedProps> = ({ userNa
           </nav>
 
           {/* Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            <YowyobProductsMenu />
-            <UserLocationBadge />
+          <div className="hidden md:flex items-center gap-2">
             {userName && (
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-1">
                 Bonjour, <span className="text-blue-600 dark:text-blue-400 font-bold">{userName}</span>
               </span>
             )}
+            <YowyobProductsMenu />
             <ThemeToggle />
             <Link href="/profile">
               <Button variant="outline" size="sm">
@@ -97,25 +95,55 @@ export const HeaderAuthenticated: React.FC<HeaderAuthenticatedProps> = ({ userNa
             </Button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+          {/* Mobile */}
+          <div className="md:hidden flex items-center gap-1">
+            <YowyobProductsMenu />
+            <button
+              className="p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800">
             <nav className="flex flex-col gap-4">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Yowyob Products</p>
+              <div className="grid grid-cols-3 gap-2">
+                {YOWYOB_SERVICES.map((service) =>
+                  service.external ? (
+                    <a
+                      key={service.id}
+                      href={service.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <span className="text-xl">{service.emoji}</span>
+                      <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 mt-1">{service.name}</span>
+                    </a>
+                  ) : (
+                    <Link
+                      key={service.id}
+                      href={service.href}
+                      className="flex flex-col items-center p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span className="text-xl">{service.emoji}</span>
+                      <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 mt-1">{service.name}</span>
+                    </Link>
+                  )
+                )}
+              </div>
               <Link href="/home" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold">
                 Accueil
               </Link>

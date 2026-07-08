@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { SearchResult } from '@/types/search';
 import { getExternalUrl } from './get-external-url';
-import { openExternalLink } from '@/store/external-link-store';
 
 interface SponsoredSectionProps {
   results: SearchResult[];
@@ -22,7 +21,9 @@ export function SponsoredSection({ results, position = 'top' }: SponsoredSection
           <div
             key={item.id}
             className="group py-3 border-b border-[#f1f3f4] last:border-0 hover:bg-[#f8f9fa] -mx-2 px-2 rounded transition-colors cursor-pointer"
-            onClick={() => openExternalLink(item)}
+            onClick={() => {
+              if (externalUrl) window.open(externalUrl, '_blank', 'noopener,noreferrer');
+            }}
           >
             {/* Sponsored badge + URL */}
             <div className="flex items-center gap-2 mb-0.5">

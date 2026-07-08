@@ -1,49 +1,88 @@
 import { SearchResult } from '@/types/search';
 
-export interface ExternalTarget {
-  /** URL à ouvrir, ou null si on n'a aucun lien exploitable. */
-  url: string | null;
-  /** true → c'est le site officiel du commerce ; false → une page Google (repli). */
-  isOfficial: boolean;
+// Domaines de sites corporate (maison-mère) qui ne représentent PAS un établissement
+// spécifique. Les afficher comme lien d'un kiosque / point de vente est trompeur.
+// Pour ces résultats on bascule directement vers Google Maps du lieu exact.
+const CORPORATE_DOMAINS = new Set([
+  // Telecom
+  'mtn.cm', 'orange.cm', 'camtel.cm',
+  // Énergie / eau
+  'totalenergies.com', 'total.cm', 'eneo.cm', 'camwater.cm',
+  // Banques & fintech
+  'ecobank.com', 'bicec.com', 'afrilandfirstbank.com',
+  'societegenerale.cm', 'scb.cm', 'bgfibank.com', 'ubagroup.com',
+  'sc.com', 'nfcbank.cm', 'cbcbank.cm', 'banque-atlantique.com',
+  'advanscmr.com', 'expressunion.cm',
+  // Transfert d'argent
+  'westernunion.com', 'moneygram.com',
+  // Médias / divertissement
+  'canalplus-afrique.com', 'dstv.com',
+  // Industrie
+  'sabcbrasseries.com', 'sosucam.com', 'chococam.com',
+  'camair-co.cm',
+]);
+
+function isCorporateDomain(url: string): boolean {
+  try {
+    const host = new URL(url.startsWith('http') ? url : 'https://' + url).hostname
+      .replace(/^www\./, '');
+    return CORPORATE_DOMAINS.has(host);
+  } catch {
+    return false;
+  }
 }
 
-/** Recherche Google sur le nom (+ ville) de l'établissement — repli universel. */
-export function getGoogleSearchUrl(item: SearchResult): string {
-  const name = (item.title || item.name || '').trim();
-  const q = encodeURIComponent([name, item.city].filter(Boolean).join(' ') || 'yowyob');
-  return `https://www.google.com/search?q=${q}`;
+function normalizeUrl(url: string): string {
+  const u = url.trim();
+  if (u.startsWith('http://') || u.startsWith('https://')) return u;
+  return 'https://' + u;
 }
 
-/**
- * Détermine la destination d'un résultat, par ordre de priorité :
- *   1. website officiel scrappé   → { isOfficial: true }
- *   2. googleMapsUrl              → { isOfficial: false } (page Google)
- *   3. recherche Google sur le nom → { isOfficial: false } (page Google)
- *   4. rien d'exploitable          → { url: null }
- *
- * On ne « devine » plus une URL `<nom>.com` (qui menait souvent vers une page
- * inexistante) : à défaut de site officiel, on bascule sur une page Google,
- * dont l'ouverture est confirmée au préalable par l'utilisateur.
- */
-export function getExternalTarget(item: SearchResult): ExternalTarget {
-  if (item.website && item.website.trim()) {
-    return { url: item.website.trim(), isOfficial: true };
-  }
-  if (item.googleMapsUrl && item.googleMapsUrl.trim()) {
-    return { url: item.googleMapsUrl.trim(), isOfficial: false };
-  }
-  const name = (item.title || item.name || '').trim();
-  if (name) {
-    return { url: getGoogleSearchUrl(item), isOfficial: false };
-  }
-  return { url: null, isOfficial: false };
-}
-
-/**
- * URL externe d'un résultat (ou null). Utilisée pour décider de l'affichage des
- * libellés / icônes « lien externe ». Pour OUVRIR le lien, passer par
- * `openExternalLink()` afin de gérer la vérification et la confirmation.
- */
 export function getExternalUrl(item: SearchResult): string | null {
-  return getExternalTarget(item).url;
+  // Website scrappé : uniquement si ce n'est pas un domaine corporate
+  // (un kiosque MTN ne doit pas pointer vers mtn.cm)
+  if (item.website && !item.website.includes('@') && !isCorporateDomain(item.website)) {
+    return normalizeUrl(item.website);
+  }
+  if (item.googleMapsUrl) return item.googleMapsUrl;
+
+  const lat = item.latitude ?? (item.location as any)?.lat;
+  const lng = item.longitude ?? (item.location as any)?.lng;
+  const name = item.title || item.name;
+
+  if (lat != null && lng != null && name) {
+    const q = encodeURIComponent(`${name}${item.city ? `, ${item.city}` : ''}`);
+    return `https://www.google.com/maps/search/${q}/@${lat},${lng},17z`;
+  }
+
+  if (name) {
+    const q = encodeURIComponent(`${name}${item.city ? ` ${item.city}` : ''}`);
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  }
+
+  return null;
+}
+
+export function getExternalTarget(item: SearchResult): { url: string | null; isOfficial: boolean } {
+  const hasWebsite = !!(item.website && !item.website.includes('@') && !isCorporateDomain(item.website));
+  if (hasWebsite) {
+    return { url: normalizeUrl(item.website!), isOfficial: true };
+  }
+  return { url: getExternalUrl(item), isOfficial: false };
+}
+
+export function getGoogleSearchUrl(item: SearchResult): string {
+  const name = item.title || item.name;
+  const lat = item.latitude ?? (item.location as any)?.lat;
+  const lng = item.longitude ?? (item.location as any)?.lng;
+
+  if (lat != null && lng != null && name) {
+    const q = encodeURIComponent(`${name}${item.city ? `, ${item.city}` : ''}`);
+    return `https://www.google.com/maps/search/${q}/@${lat},${lng},17z`;
+  }
+  if (name) {
+    const q = encodeURIComponent(`${name}${item.city ? ` ${item.city}` : ''}`);
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  }
+  return `https://www.google.com/maps`;
 }

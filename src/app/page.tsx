@@ -33,137 +33,111 @@ export default function PublicHomePage() {
   return (
     <ConditionalLayout>
 
-      <div className="min-h-screen bg-white dark:bg-gray-900">
-        {/* Hero Section */}
-        <section className="relative min-h-[90vh] flex items-center justify-center bg-gradient-to-b from-white via-blue-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-
-          <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-            {/* Title */}
-            <h1 className="text-5xl md:text-7xl font-black mb-6 text-gray-900 dark:text-gray-100">
-              Trouvez tout ce dont
-              <br />
-              <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-                vous avez besoin
-              </span>
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col transition-colors duration-200">
+        {/* Main Search Area - Google Style */}
+        <main className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 relative">
+          
+          {/* Logo Yowyob */}
+          <div className="mb-8 text-center">
+            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600">
+              Yowyob
             </h1>
-
-            {/* Subtitle */}
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto">
-              Le moteur de recherche local qui connecte les commerçants,
-              <br />
-              services et produits près de chez vous
-            </p>
-
-            {/* Search Bar */}
-            <div className="max-w-3xl mx-auto mb-8">
-              <div className="relative flex items-center bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 p-2 hover:border-blue-400 dark:hover:border-blue-500 transition-all">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Rechercher des produits, services, commerces..."
-                  className="flex-1 px-6 py-4 bg-transparent outline-none text-lg text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                />
-
-                {/* Icône de recherche cliquable */}
-                <button
-                  onClick={handleSearch}
-                  className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all flex items-center justify-center"
-                  title="Rechercher"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-
+            <span className="text-sm font-semibold tracking-widest text-gray-400 uppercase mt-2 block">
+              Search
+            </span>
           </div>
-        </section>
 
-        {/* Features Section */}
-        <section className="py-20 bg-white dark:bg-gray-900">
-          <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-4xl font-black text-center mb-16 text-gray-900 dark:text-gray-100">
-              Pourquoi choisir Yowyob ?
-            </h2>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {/* Feature 1 */}
-              <div className="p-8 bg-blue-50 dark:bg-gray-800 rounded-3xl hover:scale-105 transition-transform">
-                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Recherche Rapide</h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Trouvez instantanément ce que vous cherchez grâce à notre moteur de recherche intelligent
-                </p>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="p-8 bg-cyan-50 dark:bg-gray-800 rounded-3xl hover:scale-105 transition-transform">
-                <div className="w-16 h-16 bg-cyan-600 rounded-2xl flex items-center justify-center mb-6">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Géolocalisation</h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Découvrez les commerces et services à proximité avec notre carte interactive
-                </p>
-              </div>
-
-              {/* Feature 3 */}
-              <div className="p-8 bg-purple-50 dark:bg-gray-800 rounded-3xl hover:scale-105 transition-transform">
-                <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mb-6">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">100% Vérifié</h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Tous nos commerces et services sont vérifiés pour votre sécurité
-                </p>
-              </div>
+          {/* Search Bar Container */}
+          <div className="w-full max-w-2xl mx-auto">
+            <div className="relative flex items-center bg-white dark:bg-gray-800 rounded-full shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] border border-gray-200 dark:border-gray-700 transition-all duration-300 px-2 py-2">
+              <svg className="w-5 h-5 text-gray-400 ml-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Chercher sur Yowyob ou saisir une URL"
+                className="flex-1 bg-transparent border-none outline-none text-base md:text-lg text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-3"
+              />
+              <button
+                onClick={handleSearch}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-2.5 ml-2 font-medium transition-colors"
+              >
+                Rechercher
+              </button>
             </div>
           </div>
-        </section>
 
-
-
-        {/* CTA Final */}
-        <section className="py-20 bg-gradient-to-r from-blue-600 to-cyan-500 text-white">
-          <div className="max-w-4xl mx-auto px-6 text-center">
-            <h2 className="text-4xl md:text-5xl font-black mb-6">
-              Prêt à commencer ?
-            </h2>
-            <p className="text-xl mb-8 opacity-90">
-              Rejoignez des milliers d&apos;utilisateurs satisfaits
-            </p>
-            {session ? (
-              <Link href="/home">
-                <button className="px-12 py-5 bg-white text-blue-600 font-bold rounded-2xl hover:bg-gray-100 transition-all text-lg">
-                  Accéder à mon espace
-                </button>
-              </Link>
-            ) : (
-              <Link href="/auth">
-                <button className="px-12 py-5 bg-white text-blue-600 font-bold rounded-2xl hover:bg-gray-100 transition-all text-lg">
-                  Créer un compte gratuit
-                </button>
-              </Link>
-            )}
-
+          {/* Action Buttons */}
+          <div className="flex gap-4 mt-8">
+            <button 
+              onClick={handleSearch}
+              className="px-5 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-md border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all"
+            >
+              Recherche Yowyob
+            </button>
+            <button 
+              onClick={() => {
+                if (searchQuery.trim()) {
+                  router.push(`/search?q=${encodeURIComponent(searchQuery)}&ai=true`);
+                }
+              }}
+              className="px-5 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-md border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all flex items-center gap-2"
+            >
+              <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                 <path d="M9 21c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4zm12-9c0 .55-.45 1-1 1h-4c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4zm0 9c0 .55-.45 1-1 1h-4c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4zM9 12c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4z"/>
+              </svg>
+              Mode IA
+            </button>
           </div>
+        </main>
 
-        </section>
+        {/* Écosystème Yowyob Icons Grid (Bottom) */}
+        <div className="w-full bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-6">
+          <div className="max-w-4xl mx-auto px-6">
+            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-6">
+              Découvrez l'Écosystème Yowyob
+            </h3>
+            <div className="flex flex-wrap justify-center gap-8 md:gap-12">
+              <Link href="https://market.yowyob.com" className="flex flex-col items-center group">
+                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
+                  <span className="text-xl">🛍️</span>
+                </div>
+                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Market</span>
+              </Link>
+              
+              <Link href="https://jobs.yowyob.com" className="flex flex-col items-center group">
+                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
+                  <span className="text-xl">💼</span>
+                </div>
+                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Jobs</span>
+              </Link>
+
+              <Link href="https://immo.yowyob.com" className="flex flex-col items-center group">
+                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
+                  <span className="text-xl">🏠</span>
+                </div>
+                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Immo</span>
+              </Link>
+
+              <Link href="https://tours.yowyob.com" className="flex flex-col items-center group">
+                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
+                  <span className="text-xl">✈️</span>
+                </div>
+                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Tours</span>
+              </Link>
+
+              <Link href="https://connect.yowyob.com" className="flex flex-col items-center group">
+                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
+                  <span className="text-xl">🤝</span>
+                </div>
+                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Connect</span>
+              </Link>
+            </div>
+          </div>
+        </div>
 
       </div>
 

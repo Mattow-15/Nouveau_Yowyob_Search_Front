@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { SearchBar } from '@/components/search/search-bar';
@@ -9,10 +9,14 @@ import { HeaderPublic } from '@/components/layout/header-public';
 import { HeaderAuthenticated } from '@/components/layout/header-authenticated';
 
 import { SearchTabs, SearchTab } from '@/components/search/search-tabs';
-import { MapContainer } from '@/components/map/map-container';
+import dynamic from 'next/dynamic';
+const MapView = dynamic(() => import('@/components/map/map-view'), { ssr: false });
 import { SearchResult, AiSearchResponse } from '@/types/search';
 import { searchService } from '@/lib/api/search-service';
 import { useSearchStore } from '@/store';
+import { useSmartGeolocation } from '@/lib/hooks/ui/use-geolocation';
+import { resolveIntent, ResolvedIntent } from '@/lib/utils/intent-resolver';
+import { YowyobProductsMenu } from '@/components/layout/yowyob-products-menu';
 
 // Google SERP Premium Components
 import { SponsoredSection } from '@/components/search/serp/sponsored-section';
@@ -20,135 +24,397 @@ import { LocalPackSection } from '@/components/search/serp/local-pack';
 import { OrganicResult } from '@/components/search/serp/organic-result';
 import { BusinessProfilePanel } from '@/components/search/serp/business-profile-panel';
 import { ProductCarousel } from '@/components/search/serp/product-carousel';
+import { YowyobServicePanel } from '@/components/search/serp/yowyob-service-panel';
 import { PeopleAlsoAsk } from '@/components/search/serp/people-also-ask';
 import { AiAnswerPanel } from '@/components/search/serp/ai-answer-panel';
+import { Pagination } from '@/components/search/pagination';
+import { SEARCH_CONFIG } from '@/lib/constants/app-config';
 
+// ── Indicateur de position détectée ───────────────────────────────────────
+function GeoIndicator({ source, city, loading, timedOut }: {
+  source: 'gps' | 'ip' | null;
+  city: string | null;
+  loading: boolean;
+  timedOut: boolean;
+}) {
+  if (loading && !timedOut) {
+    return (
+      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500 animate-pulse">
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Détection de votre position...
+      </div>
+    );
+  }
+
+  if (!source) return null;
+
+  const isGps    = source === 'gps';
+  const label    = city ? `${city} · ${isGps ? 'GPS' : 'approx.'}` : isGps ? 'Position GPS' : 'Localisation approximative';
+  const colorCls = isGps
+    ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900'
+    : 'bg-blue-50  text-blue-700  border-blue-200  dark:bg-blue-950/30  dark:text-blue-400  dark:border-blue-900';
+  const dotCls   = isGps ? 'bg-green-500 animate-pulse' : 'bg-blue-400';
+
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${colorCls}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${dotCls}`} />
+        📍 {label}
+      </span>
+    </div>
+  );
+}
+
+// ── Sélecteur de rayon ─────────────────────────────────────────────────────
+const RADIUS_OPTIONS = [5, 10, 30, 50, 100] as const;
+
+function RadiusSelector({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 select-none">
+      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+      </svg>
+      <select
+        value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        className="text-sm text-gray-700 dark:text-gray-200 bg-transparent outline-none cursor-pointer"
+      >
+        {RADIUS_OPTIONS.map(km => (
+          <option key={km} value={km}>{km} km</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// ── Bannière d'intention détectée ─────────────────────────────────────────
+function IntentBanner({ intent, rawQuery }: { intent: ResolvedIntent; rawQuery: string }) {
+  const hasSpecificQuery = intent.rewrittenQuery && intent.rewrittenQuery !== rawQuery;
+  const categoryLabel = intent.esCategory
+    ? { RESTAURANT: 'restaurants', HOSPITAL: 'hôpitaux & cliniques', PHARMACY: 'pharmacies' }[intent.esCategory] ?? intent.esCategory.toLowerCase()
+    : null;
+  return (
+    <div className="mt-2 flex items-center gap-2 flex-wrap">
+      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/30 text-xs font-semibold text-amber-800 dark:text-amber-400">
+        <span>{intent.emoji}</span>
+        <span>{intent.label}</span>
+        {hasSpecificQuery && (
+          <span className="font-normal text-amber-600 dark:text-amber-500">
+            · &laquo;&nbsp;{intent.rewrittenQuery}&nbsp;&raquo;
+          </span>
+        )}
+        {categoryLabel && !hasSpecificQuery && (
+          <span className="font-normal text-amber-600 dark:text-amber-500">
+            · tous les {categoryLabel}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+// ── Tri des résultats : Kernel > Pertinence > Proximité ───────────────────
+// 1. Les organisations Kernel (annuaire officiel) toujours en tête
+// 2. Parmi le reste, l'ordre du backend (score Elasticsearch = pertinence) prime
+// 3. La proximité affine le classement à pertinence comparable (score composite)
+
+function isKernelSource(r: SearchResult): boolean {
+  return r.source === 'KERNEL_ORG';
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function getResultCoords(r: SearchResult): { lat: number; lng: number } | null {
+  if (r.location?.lat != null) return { lat: r.location.lat, lng: r.location.lng };
+  if (r.latitude != null && r.longitude != null) return { lat: r.latitude, lng: r.longitude };
+  return null;
+}
+
+function prioritizeResults(
+  list: SearchResult[],
+  userLat?: number,
+  userLng?: number,
+): SearchResult[] {
+  // Groupe 1 : Kernel (pertinence backend préservée, pas de réordonnancement)
+  const kernel = list.filter(isKernelSource);
+  // Groupe 2 : tout le reste
+  const others = list.filter(r => !isKernelSource(r));
+
+  if (userLat == null || userLng == null) {
+    // Sans coordonnées : ordre backend intact dans chaque groupe
+    return [...kernel, ...others];
+  }
+
+  const MAX_DIST_KM = 50; // cap pour normalisation
+  const n = others.length || 1;
+
+  // Score composite : 65 % pertinence (rang backend) + 35 % proximité
+  const scored = others.map((r, idx) => {
+    const relevanceScore = idx / n; // 0 (meilleur) → ~1 (dernier)
+    const coords = getResultCoords(r);
+    const dist = coords
+      ? Math.min(haversineKm(userLat, userLng, coords.lat, coords.lng), MAX_DIST_KM)
+      : MAX_DIST_KM;
+    const distanceScore = dist / MAX_DIST_KM; // 0 (très proche) → 1 (loin / inconnu)
+    const composite = 0.65 * relevanceScore + 0.35 * distanceScore;
+    return { r, composite };
+  });
+
+  scored.sort((a, b) => a.composite - b.composite);
+
+  return [...kernel, ...scored.map(s => s.r)];
+}
+
+// ── Liste organique avec sections visuelles ────────────────────────────────
+function OrganicListWithSections({
+  list,
+  onResultClick,
+}: {
+  list: SearchResult[];
+  onResultClick: (item: SearchResult) => void;
+}) {
+  const yowyob  = list.filter(isKernelSource);
+  const web     = list.filter(r => !isKernelSource(r));
+  const hasBoth = yowyob.length > 0 && web.length > 0;
+
+  return (
+    <div className="flex flex-col gap-0">
+      {/* ── Section Yowyob ── */}
+      {yowyob.length > 0 && (
+        <>
+          {hasBoth && (
+            <div className="flex items-center gap-2 py-2 mb-1">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                {/* Icône Yowyob */}
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+                </svg>
+                Résultats Yowyob
+              </span>
+              <div className="flex-1 h-px bg-blue-100 dark:bg-blue-900/30" />
+            </div>
+          )}
+          {yowyob.map(item => (
+            <OrganicResult key={item.id} item={item} onClick={onResultClick} />
+          ))}
+        </>
+      )}
+
+      {/* ── Section Web (crawler) ── */}
+      {web.length > 0 && (
+        <>
+          {hasBoth && (
+            <div className="flex items-center gap-2 py-2 mt-4 mb-1">
+              <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                Résultats Web
+              </span>
+              <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+            </div>
+          )}
+          {web.map(item => (
+            <OrganicResult key={item.id} item={item} onClick={onResultClick} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Contenu principal ──────────────────────────────────────────────────────
 function SearchContent() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [query, setQuery] = useState(searchParams.get('q') || '');
-  const [activeTab, setActiveTab] = useState<SearchTab>('all');
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [showAI, setShowAI] = useState(true); // réponse IA affichée par défaut ; masquable et persiste entre recherches
+  const [query, setQuery]               = useState(searchParams.get('q') || '');
+  const [activeTab, setActiveTab]       = useState<SearchTab>('all');
+  const [results, setResults]           = useState<SearchResult[]>([]);
+  const [isLoading, setIsLoading]       = useState(false);
+  const [hasSearched, setHasSearched]   = useState(false);
+  const [showMap, setShowMap]           = useState(false);
+  const [showAI, setShowAI]             = useState(true);
   const [selectedBusiness, setSelectedBusiness] = useState<SearchResult | null>(null);
-  
-  // AI Overview states
-  const [aiResponse, setAiResponse] = useState<AiSearchResponse | null>(null);
-  
-  const { addToHistory } = useSearchStore();
+  const [aiResponse, setAiResponse]     = useState<AiSearchResponse | null>(null);
+  const [currentPage, setCurrentPage]   = useState(1);
+  const [radius, setRadius]             = useState<number>(SEARCH_CONFIG.DEFAULT_DISTANCE);
 
-  // Garde anti-concurrence : seule la DERNIÈRE recherche lancée a le droit de
-  // mettre à jour l'état. Évite qu'une requête lente/échouée (la prod timeout
-  // parfois) revienne après et écrase des résultats déjà affichés.
-  const latestRequest = useRef(0);
+  const { addToHistory } = useSearchStore();
+  const geo = useSmartGeolocation();
+
+  // ── Intention sémantique ─────────────────────────────────────────────────
+  // Calculée de façon synchrone à chaque changement de query — pas de useEffect
+  // ni d'état supplémentaire : on dérive directement via useMemo.
+  const resolvedIntent = useMemo(() => resolveIntent(query), [query]);
+
+  // Requête effectivement envoyée au backend : enrichie si une intention est détectée,
+  // identique à la saisie brute sinon (l'utilisateur ne voit que sa saisie originale).
+  const effectiveQuery = resolvedIntent?.rewrittenQuery ?? query;
+
+  // Ref pour savoir si l'utilisateur a explicitement basculé la carte :
+  // dans ce cas on ne la force plus automatiquement.
+  const userToggledMap = useRef(false);
+
+  // Auto-afficher la carte quand l'intention le demande (sauf si l'utilisateur
+  // a déjà choisi manuellement).
+  useEffect(() => {
+    if (resolvedIntent?.autoShowMap && !userToggledMap.current) {
+      setShowMap(true);
+    }
+  }, [resolvedIntent?.autoShowMap]);
+
+  // Timeout de sécurité : si la géoloc prend > 2 s, on lance la recherche
+  // sans coordonnées plutôt que de bloquer l'utilisateur.
+  const [geoTimedOut, setGeoTimedOut] = useState(false);
+  useEffect(() => {
+    if (!geo.loading) return;
+    const t = setTimeout(() => setGeoTimedOut(true), 2000);
+    return () => clearTimeout(t);
+  }, [geo.loading]);
 
   // Sync query with URL
   useEffect(() => {
     const urlQuery = searchParams.get('q') || '';
     setQuery(urlQuery);
+    setCurrentPage(1);
   }, [searchParams]);
 
-  // Fetch results (Parallelized AI RAG & Classic search for Google SERP experience)
+  // Reset page when tab or geolocation changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, geo.latitude, geo.longitude]);
+
+  // Fetch results — Parallelized AI RAG & Classic search for Google SERP experience
   const fetchResults = async () => {
     if (!query && !hasSearched) return;
-    const seq = ++latestRequest.current;
     setIsLoading(true);
 
     let typeFilter: string | undefined = activeTab === 'all' ? undefined : activeTab;
     if (typeFilter === 'products') typeFilter = 'product';
     if (typeFilter === 'services') typeFilter = 'service';
 
+    const hasCoords = geo.latitude != null && geo.longitude != null;
+
     try {
-      // Execute both standard and AI search in parallel for maximum performance
       const [aiRes, classicRes] = await Promise.allSettled([
-        searchService.searchAi(query),
+        // L'IA reçoit la query brute pour générer une réponse dans le langage de l'utilisateur
+        searchService.searchAi(query, geo.city ?? undefined),
+        // Le backend reçoit la requête enrichie + le filtre catégorie ES si une intention est détectée
         searchService.search({
-          query,
-          type: typeFilter,
-          page: 1
-        })
+          query:      effectiveQuery,
+          type:       typeFilter,
+          page:       1,
+          latitude:   geo.latitude  ?? undefined,
+          longitude:  geo.longitude ?? undefined,
+          radius:     hasCoords ? radius : undefined,
+          esCategory: resolvedIntent?.esCategory,
+        }),
       ]);
 
-      // Une recherche plus récente est partie entre-temps → on ignore ce retour
-      // (sinon une réponse obsolète/lente écraserait les résultats à l'écran).
-      if (seq !== latestRequest.current) return;
-
-      let sourcesList: SearchResult[] = [];
-
-      // 1. Process AI RAG search
-      if (aiRes.status === 'fulfilled' && aiRes.value.success) {
-        setAiResponse(aiRes.value);
-        sourcesList = aiRes.value.sources;
+      // Résultats classiques (géo-filtrés avec coordonnées) — source de vérité
+      let classicResults: SearchResult[] = [];
+      if (classicRes.status === 'fulfilled' && classicRes.value.success) {
+        classicResults = prioritizeResults(
+          classicRes.value.results,
+          geo.latitude ?? undefined,
+          geo.longitude ?? undefined,
+        );
+        setResults(classicResults);
+        setSelectedBusiness(classicResults[0] ?? null);
       } else {
-        setAiResponse(null);
+        setResults([]);
+        setSelectedBusiness(null);
       }
 
-      // 2. Process Standard Search results
-      const classicOk = classicRes.status === 'fulfilled' && classicRes.value.success;
-      if (classicOk) {
-        // Réponse fiable (même vide) → on l'applique telle quelle.
-        const list = classicRes.value.results;
-        setResults(list);
-        setSelectedBusiness(list[0] ?? sourcesList[0] ?? null);
-      } else if (sourcesList.length > 0) {
-        // Échec de la recherche classique mais l'IA a des sources → repli.
-        setResults(sourcesList);
-        setSelectedBusiness(sourcesList[0]);
-      }
-      // Sinon : la requête a ÉCHOUÉ (réseau/timeout/401) et aucun repli.
-      // On NE vide PAS la liste — on garde l'affichage précédent plutôt que de
-      // faire « clignoter » des résultats déjà visibles.
-
-      // 3. Save to search history
-      if (query && query.trim().length > 0) {
-        addToHistory(query);
-        if (session?.user) {
-          searchService.addToHistory(query);
+      // L'IA synthétise les MÊMES résultats géo-corrects (pas sa propre recherche)
+      if (aiRes.status === 'fulfilled' && aiRes.value.success) {
+        // Remplacer les sources backend (sans géo) par les résultats classiques (avec géo)
+        const sourcesForAi = classicResults.length > 0 ? classicResults : aiRes.value.sources;
+        setAiResponse({ ...aiRes.value, sources: sourcesForAi });
+      } else {
+        // Même sans réponse backend, si on a des résultats classiques → activer l'IA
+        if (classicResults.length > 0) {
+          setAiResponse({
+            aiAnswer: '',
+            intent: 'GENERAL',
+            rewrittenQuery: query,
+            sources: classicResults,
+            processingTimeMs: 0,
+            aiMode: true,
+            success: true,
+          });
+        } else {
+          setAiResponse(null);
         }
+      }
+
+      if (query.trim()) {
+        addToHistory(query);
+        if (session?.user) searchService.addToHistory(query);
       }
     } catch (error) {
       console.error('Error fetching results:', error);
-      // En cas d'exception inattendue, idem : ne pas effacer si requête obsolète.
-      if (seq === latestRequest.current) setAiResponse(null);
+      setResults([]);
+      setSelectedBusiness(null);
+      setAiResponse(null);
     } finally {
-      if (seq === latestRequest.current) {
-        setIsLoading(false);
-        setHasSearched(true);
-      }
+      setIsLoading(false);
+      setHasSearched(true);
     }
   };
 
-  // Debounced search function
+  // Déclencher la recherche uniquement quand la géoloc est résolue (ou timeout).
+  // Cela garantit que la toute première requête inclut déjà les coordonnées
+  // si elles sont disponibles (cache localStorage ou IP rapide).
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchResults();
-    }, 300); // 300ms delay for live search
-
+    if (geo.loading && !geoTimedOut) return;
+    const timer = setTimeout(() => { fetchResults(); }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, activeTab]);
+  }, [query, activeTab, geo.latitude, geo.longitude, geoTimedOut, radius]);
 
   const handleSearch = (newQuery: string) => {
     setQuery(newQuery);
-    // Update URL so browser history reflects the current search
+    // Réinitialiser le flag carte quand une nouvelle recherche est lancée
+    userToggledMap.current = false;
     const params = new URLSearchParams();
     if (newQuery.trim()) params.set('q', newQuery.trim());
     router.push(`/search?${params.toString()}`);
+  };
+
+  const handleToggleMap = () => {
+    userToggledMap.current = true; // l'utilisateur prend le contrôle
+    setShowMap(prev => !prev);
   };
 
   const handleResultClick = (item: SearchResult) => {
     setSelectedBusiness(item);
   };
 
-  // Split results for premium Google SERP layout sections
-  const sponsoredAds = results.filter(r => r.rating && r.rating >= 4.7).slice(0, 2);
-  const bottomAds = results.filter(r => r.rating && r.rating >= 4.5 && r.rating < 4.7).slice(0, 1);
-  const organicList = results.filter(r => !sponsoredAds.includes(r) && !bottomAds.includes(r));
+  // Split results for premium Google SERP layout
+  const sponsoredAds    = results.filter(r => r.rating && r.rating >= 4.7).slice(0, 2);
+  const bottomAds       = results.filter(r => r.rating && r.rating >= 4.5 && r.rating < 4.7).slice(0, 1);
+  const organicListAll  = results.filter(r => !sponsoredAds.includes(r) && !bottomAds.includes(r));
+  const perPage         = SEARCH_CONFIG.RESULTS_PER_PAGE;
+  const totalPages      = Math.max(1, Math.ceil(organicListAll.length / perPage));
+  const safePage        = Math.min(currentPage, totalPages);
+  const organicList     = organicListAll.slice((safePage - 1) * perPage, safePage * perPage);
+
+  const hasGeo = geo.latitude != null && geo.longitude != null;
 
   return (
     <>
@@ -159,30 +425,45 @@ function SearchContent() {
       )}
 
       <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Search Bar */}
-          <div className="mb-8">
-            <SearchBar
-              defaultValue={query}
-              onSearch={handleSearch}
-              onChange={(val) => setQuery(val)}
-              showSuggestions={true}
+        <div className="max-w-6xl mx-auto px-6 py-6">
+
+          {/* Search Bar + menu waffle + indicateurs */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <SearchBar
+                  defaultValue={query}
+                  onSearch={handleSearch}
+                  showSuggestions={true}
+                />
+              </div>
+              {/* Menu waffle Yowyob — style Google Apps */}
+              <div className="flex-shrink-0">
+                <YowyobProductsMenu />
+              </div>
+            </div>
+            <GeoIndicator
+              source={geo.source}
+              city={geo.city}
+              loading={geo.loading}
+              timedOut={geoTimedOut}
             />
+            {resolvedIntent && (
+              <IntentBanner intent={resolvedIntent} rawQuery={query} />
+            )}
           </div>
 
           {/* Tabs */}
           <div className="mb-6">
-            <SearchTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
+            <SearchTabs activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
 
-          {/* Control Buttons */}
-          <div className="flex flex-wrap gap-4 mb-8 items-center">
-            {/* Toggle Map Button */}
+          {/* Barre de contrôles */}
+          <div className="flex flex-wrap gap-3 mb-8 items-center">
+
+            {/* Toggle carte */}
             <button
-              onClick={() => setShowMap(!showMap)}
+              onClick={handleToggleMap}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg text-sm"
             >
               {showMap ? (
@@ -195,20 +476,30 @@ function SearchContent() {
               ) : (
                 <>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
                   Afficher sur la carte
                 </>
               )}
             </button>
 
+            {/* Sélecteur de rayon — visible uniquement si on a des coordonnées */}
+            {hasGeo && !geo.loading && (
+              <RadiusSelector value={radius} onChange={(v) => { setRadius(v); setCurrentPage(1); }} />
+            )}
 
-
-            {/* AI Generation Loader status */}
+            {/* Loader IA */}
             {isLoading && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-4 py-2.5 rounded-xl border border-indigo-100/40 dark:border-indigo-950/20 animate-pulse">
-                <span className="w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full animate-ping" />
-                <span>Génération de la synthèse IA YowYob...</span>
+              <div className="flex items-center gap-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-4 py-2.5 rounded-xl border border-indigo-100/40 dark:border-indigo-950/20 shadow-sm">
+                <div className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="animate-pulse">Analyse de l&apos;intention et recherche (IA YowYob)...</span>
+                  <span className="text-[10px] opacity-70 font-normal">Interrogation de la base Core KERNEL_ORG en cours</span>
+                </div>
               </div>
             )}
           </div>
@@ -222,6 +513,7 @@ function SearchContent() {
                 rewrittenQuery={aiResponse.rewrittenQuery}
                 sources={aiResponse.sources}
                 processingTimeMs={aiResponse.processingTimeMs}
+                userCity={geo.city ?? undefined}
                 onSourceClick={handleResultClick}
                 onClose={() => setShowAI(false)}
               />
@@ -235,87 +527,96 @@ function SearchContent() {
             )
           )}
 
-          {/* Results Section */}
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <CardSkeleton key={i} />
-              ))}
-            </div>
-          ) : results.length === 0 && query.trim() !== '' ? (
-            <div className="text-center py-20">
-              <h3 className="text-xl text-gray-600 dark:text-gray-400">Aucun résultat trouvé pour &quot;{query}&quot;</h3>
-            </div>
-          ) : showMap ? (
-            // Layout with map: 2 columns + map sidebar
-            <div className="flex flex-col lg:flex-row gap-6">
-              <div className="flex-1 overflow-y-auto max-h-[calc(100vh-300px)] pr-2 flex flex-col gap-6">
-                {/* Google SERP Blocks in Map split view */}
-                <SponsoredSection results={sponsoredAds} position="top" />
-                <ProductCarousel results={results} />
-                <LocalPackSection results={results} query={query} />
-                <PeopleAlsoAsk query={query} />
-                <div className="flex flex-col gap-2">
-                  {organicList.map((item) => (
-                    <OrganicResult key={item.id} item={item} onClick={handleResultClick} />
-                  ))}
-                </div>
-                <SponsoredSection results={bottomAds} position="bottom" />
-              </div>
-              
-              <div className="w-full lg:w-[500px] xl:w-[600px] flex-shrink-0 flex flex-col gap-6">
-                <div className="h-[400px] rounded-3xl overflow-hidden shadow-2xl">
-                  <MapContainer
-                    markers={results.filter(r => r.location?.lat || r.latitude).map(r => ({
-                      id: r.id,
-                      position: [r.location?.lat || r.latitude || 3.848, r.location?.lng || r.longitude || 11.5021],
-                      title: r.title || r.name || 'Établissement',
-                      description: r.description
-                    }))}
-                    className="w-full h-full"
-                  />
-                </div>
+          {/* Results Section — wrapper flex pour la sidebar Yowyob toujours visible */}
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-                {/* Right Business Panel in split view */}
-                {selectedBusiness && (
-                  <BusinessProfilePanel
-                    item={selectedBusiness}
-                    onClose={() => setSelectedBusiness(null)}
-                  />
-                )}
-              </div>
-            </div>
-          ) : (
-            // Layout without map: Clean Two-Column Flex Grid matching original spacings
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
-              {/* Main Column */}
-              <div className="flex-1 max-w-4xl flex flex-col gap-6">
-                {/* Google SERP Premium Blocks */}
-                <SponsoredSection results={sponsoredAds} position="top" />
-                <ProductCarousel results={results} />
-                <LocalPackSection results={results} query={query} />
-                <PeopleAlsoAsk query={query} />
-                
-                <div className="flex flex-col gap-2">
-                  {organicList.map((item) => (
-                    <OrganicResult key={item.id} item={item} onClick={handleResultClick} />
-                  ))}
+            {/* ── Colonne principale ── */}
+            <div className="flex-1 min-w-0">
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
                 </div>
+              ) : results.length === 0 && query.trim() !== '' ? (
+                <div className="text-center py-20">
+                  <h3 className="text-xl text-gray-600 dark:text-gray-400">
+                    Aucun résultat trouvé pour &quot;{query}&quot;
+                    {hasGeo && <span className="block text-sm mt-2 text-gray-400">dans un rayon de {radius} km</span>}
+                  </h3>
+                </div>
+              ) : showMap ? (
+                // Layout avec carte : résultats libres à gauche, carte sticky à droite
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
+                  <div className="flex-1 min-w-0 flex flex-col gap-6">
+                    <SponsoredSection results={sponsoredAds} position="top" />
+                    <ProductCarousel results={results} />
+                    <LocalPackSection results={results} query={query} />
+                    <PeopleAlsoAsk query={query} />
+                    <OrganicListWithSections list={organicList} onResultClick={handleResultClick} />
+                    {organicListAll.length > perPage && (
+                      <Pagination current_page={safePage} total_pages={totalPages} on_page_change={setCurrentPage} />
+                    )}
+                    <SponsoredSection results={bottomAds} position="bottom" />
+                  </div>
 
-                <SponsoredSection results={bottomAds} position="bottom" />
-              </div>
-
-              {/* Right Column Sidebar for Business Profile Panel */}
-              {selectedBusiness && (
-                <div className="hidden lg:block w-[360px] flex-shrink-0 sticky top-24">
-                  <BusinessProfilePanel
-                    item={selectedBusiness}
-                    onClose={() => setSelectedBusiness(null)}
-                  />
+                  <div className="w-full lg:w-[400px] flex-shrink-0 sticky top-24 flex flex-col gap-4">
+                    <div className="h-[55vh] min-h-[320px] rounded-2xl overflow-hidden shadow-xl">
+                      <MapView
+                        center={
+                          geo.latitude && geo.longitude
+                            ? [geo.latitude, geo.longitude]
+                            : [3.848, 11.5021]
+                        }
+                        zoom={geo.latitude ? 14 : 12}
+                        userLocation={
+                          geo.latitude && geo.longitude
+                            ? [geo.latitude, geo.longitude]
+                            : undefined
+                        }
+                        markers={results
+                          .filter(r => r.location?.lat != null || r.latitude != null)
+                          .map(r => ({
+                            id: r.id,
+                            position: [
+                              r.location?.lat ?? r.latitude ?? 3.848,
+                              r.location?.lng ?? r.longitude ?? 11.5021,
+                            ] as [number, number],
+                            title: r.title || r.name || 'Établissement',
+                            description: r.description,
+                          }))}
+                      />
+                    </div>
+                    {selectedBusiness && (
+                      <BusinessProfilePanel item={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
+                    )}
+                  </div>
+                </div>
+              ) : (
+                // Layout standard sans carte
+                <div className="flex flex-col gap-6">
+                  <SponsoredSection results={sponsoredAds} position="top" />
+                  <ProductCarousel results={results} />
+                  <LocalPackSection results={results} query={query} />
+                  <PeopleAlsoAsk query={query} />
+                  <OrganicListWithSections list={organicList} onResultClick={handleResultClick} />
+                  {organicListAll.length > perPage && (
+                    <Pagination current_page={safePage} total_pages={totalPages} on_page_change={setCurrentPage} />
+                  )}
+                  <SponsoredSection results={bottomAds} position="bottom" />
                 </div>
               )}
             </div>
-          )}
+
+            {/* ── Sidebar droite : service Yowyob suggéré + fiche établissement ── */}
+            {query.trim() && !showMap && (
+              <div className="hidden lg:flex flex-col gap-4 w-[320px] flex-shrink-0 sticky top-24">
+                <YowyobServicePanel query={query} />
+                {selectedBusiness && (
+                  <BusinessProfilePanel item={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
+                )}
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
     </>
@@ -326,7 +627,7 @@ export default function SearchPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     }>
       <SearchContent />

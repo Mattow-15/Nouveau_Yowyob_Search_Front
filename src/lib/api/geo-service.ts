@@ -11,6 +11,7 @@ export interface GeoLocation {
 export interface RouteInfo {
     distance: number; // in meters
     duration: number; // in seconds
+    isEstimate?: boolean; // true quand OSRM a échoué → distance Haversine corrigée
     polyline: string; // encoded polyline or simple list of points
 }
 
@@ -34,6 +35,12 @@ class GeoService {
                 url: 'https://ipapi.co/json/',
                 parse: d => (!d?.error && d?.latitude != null)
                     ? { lat: parseFloat(d.latitude), lng: parseFloat(d.longitude), city: d.city, country: d.country_name }
+                    : null,
+            },
+            {
+                url: 'https://ip-api.com/json/?fields=status,lat,lon,city,country',
+                parse: d => (d?.status === 'success' && d.lat != null)
+                    ? { lat: d.lat, lng: d.lon, city: d.city, country: d.country }
                     : null,
             },
         ];
@@ -175,87 +182,55 @@ class GeoService {
     }
 
     /**
-     * Get route between two points
+     * Calcule un itinéraire via OSRM public (router.project-osrm.org).
+     * Le backend geo/route requiert une auth non disponible côté client.
      */
     async getRoute(start: GeoLocation, end: GeoLocation, mode: 'driving' | 'walking' | 'cycling' = 'driving'): Promise<RouteInfo | null> {
-        try {
-            const response = await httpClient.get<any>(`${API_ENDPOINTS.GEO_ROUTE}?startLat=${start.lat}&startLon=${start.lng}&endLat=${end.lat}&endLon=${end.lng}&mode=${mode}`);
-            if (response && typeof response.distance === 'number') {
-                // Detect backend straight-line fallback:
-                // The backend returns duration=0 and only 2 points when it can't reach OSRM.
-                // A real route always has duration > 0 and more than 2 waypoints.
-                const polylinePoints = response.polyline ? JSON.parse(response.polyline) : [];
-                const isRealRoute = response.duration > 0 && polylinePoints.length > 2;
+        // OSRM public (router.project-osrm.org) renvoie les mêmes données pour tous
+        // les profils sur les données africaines — seul `driving` est fiable pour le tracé.
+        // On utilise donc toujours `driving` pour obtenir la distance routière réelle et
+        // le tracé précis, puis on recalcule la durée selon le mode (vitesses ci-dessous).
+        const coords = `${start.lng},${start.lat};${end.lng},${end.lat}`;
 
-                if (isRealRoute) {
-                    console.debug(`Backend OSRM route OK: ${polylinePoints.length} pts, ${(response.distance/1000).toFixed(1)}km, ${Math.round(response.duration/60)}min`);
+        try {
+            const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 10000);
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timer);
+
+            if (res.ok) {
+                const data = await res.json();
+                const osrmRoute = data?.routes?.[0];
+                if (osrmRoute?.geometry?.coordinates?.length) {
+                    // GeoJSON [lon, lat] → [[lat, lon]] pour Leaflet
+                    const points: [number, number][] = osrmRoute.geometry.coordinates.map(
+                        ([lon, lat]: [number, number]) => [lat, lon] as [number, number]
+                    );
+                    points.unshift([start.lat, start.lng]);
+                    points.push([end.lat, end.lng]);
+
                     return {
-                        distance: response.distance,
-                        duration: response.duration,
-                        polyline: response.polyline
+                        distance: osrmRoute.distance,
+                        // Durée recalculée selon le mode : OSRM foot/bike = données voiture en Afrique
+                        duration: this.estimateDuration(osrmRoute.distance, mode),
+                        polyline: JSON.stringify(points),
                     };
                 }
-                // Backend returned a straight-line fallback → escalate to client-side OSRM
-                console.debug('Backend returned straight-line fallback (duration=0 or 2 pts), escalating to client-side OSRM.');
             }
-            throw new Error('Backend route unavailable or straight-line fallback detected');
-        } catch (error) {
-            console.debug('Backend route API unavailable, falling back to client-side OSRM.');
-            // Fallback: call OSRM public API directly from the browser
-            return this.getRouteFromOsrmDirect(start, end, mode);
+        } catch {
+            // OSRM indisponible → fallback Haversine
         }
-    }
 
-    /**
-     * Direct client-side call to the OSRM public demo server.
-     * Returns real road routing polylines, not a straight line.
-     */
-    private async getRouteFromOsrmDirect(start: GeoLocation, end: GeoLocation, mode: 'driving' | 'walking' | 'cycling'): Promise<RouteInfo | null> {
-        // Map to OSRM profile names
-        const profileMap: Record<string, string> = {
-            driving: 'driving',
-            walking: 'foot',
-            cycling: 'bike',
+        // Fallback : ligne droite Haversine × 1.3 (correction route réelle Cameroun)
+        const directDistance = this.calculateHaversineDistance(start, end);
+        const roadCorrected = directDistance * 1.3;
+        return {
+            distance: roadCorrected,
+            duration: this.estimateDuration(roadCorrected, mode),
+            polyline: JSON.stringify([[start.lat, start.lng], [end.lat, end.lng]]),
+            isEstimate: true,
         };
-        const profile = profileMap[mode] ?? 'driving';
-        const coords = `${start.lng},${start.lat};${end.lng},${end.lat}`;
-        const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?overview=full&geometries=geojson`;
-
-        try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`OSRM returned ${res.status}`);
-            const data = await res.json();
-            const route = data?.routes?.[0];
-            if (!route) throw new Error('No route in OSRM response');
-
-            // Convert GeoJSON [lon, lat] → [[lat, lon], ...] for Leaflet
-            const points: [number, number][] = route.geometry.coordinates.map(
-                ([lon, lat]: [number, number]) => [lat, lon]
-            );
-
-            // OSRM snaps coordinates to the nearest road. 
-            // If the start/end points are far from a road, the polyline will visually stop before reaching the map marker.
-            // Bridge the gap by explicitly adding the exact start and end coordinates:
-            if (points.length > 0) {
-                points.unshift([start.lat, start.lng]);
-                points.push([end.lat, end.lng]);
-            }
-
-            return {
-                distance: route.distance,
-                duration: route.duration,
-                polyline: JSON.stringify(points),
-            };
-        } catch (osrmError) {
-            console.warn('Client-side OSRM also failed, using straight-line fallback.', osrmError);
-            // Last resort: straight Haversine line
-            const directDistance = this.calculateHaversineDistance(start, end);
-            return {
-                distance: directDistance,
-                duration: this.estimateDuration(directDistance, mode),
-                polyline: JSON.stringify([[start.lat, start.lng], [end.lat, end.lng]]),
-            };
-        }
     }
 
     private estimateDuration(distance: number, mode: 'driving' | 'walking' | 'cycling'): number {

@@ -180,12 +180,12 @@ export default function AboutPage() {
             <div className="mb-16">
               <h3 className="text-2xl font-black mb-8 text-gray-900 dark:text-gray-100">Encadrants</h3>
               <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto mb-12">
-                {/* Pr Djotio */}
+                {/* Dr Djotio */}
                 <div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-gray-800 dark:to-gray-700 p-8 rounded-2xl border border-yellow-300 dark:border-yellow-800 hover:shadow-lg transition-all">
                   <div className="w-24 h-24 bg-gradient-to-br from-yellow-500 to-amber-400 rounded-full mx-auto mb-6 flex items-center justify-center text-white text-3xl font-black">
                     DT
                   </div>
-                  <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Pr Djotio Thomas</h3>
+                  <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Dr Djotio Thomas</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold mb-1">Professeur / Responsable du Projet</p>
                   <p className="text-xs text-gray-500 dark:text-gray-500">Génie Informatique</p>
                 </div>

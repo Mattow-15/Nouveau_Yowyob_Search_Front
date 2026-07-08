@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
 import { YowyobProductsMenu } from './yowyob-products-menu';
+import { YOWYOB_SERVICES } from '@/lib/constants/yowyob-services';
 
 export const HeaderPublic: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -67,7 +68,7 @@ export const HeaderPublic: React.FC = () => {
           </nav>
 
           {/* Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2">
             <YowyobProductsMenu />
             <ThemeToggle />
             <Link href="/auth">
@@ -77,25 +78,55 @@ export const HeaderPublic: React.FC = () => {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+          {/* Mobile */}
+          <div className="md:hidden flex items-center gap-1">
+            <YowyobProductsMenu />
+            <button
+              className="p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800">
             <nav className="flex flex-col gap-4">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Yowyob Products</p>
+              <div className="grid grid-cols-3 gap-2">
+                {YOWYOB_SERVICES.map((service) =>
+                  service.external ? (
+                    <a
+                      key={service.id}
+                      href={service.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <span className="text-xl">{service.emoji}</span>
+                      <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 mt-1">{service.name}</span>
+                    </a>
+                  ) : (
+                    <Link
+                      key={service.id}
+                      href={service.href}
+                      className="flex flex-col items-center p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span className="text-xl">{service.emoji}</span>
+                      <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 mt-1">{service.name}</span>
+                    </Link>
+                  )
+                )}
+              </div>
               <Link href="/about" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold">
                 À propos
               </Link>

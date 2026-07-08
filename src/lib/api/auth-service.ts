@@ -38,18 +38,15 @@ export const authService = {
   },
 
   storeTokens(data: AuthResponse) {
+    // Tokens en localStorage uniquement — NextAuth gère la session côté serveur.
+    // En production, migrer vers des cookies HttpOnly posés par le serveur.
     localStorage.setItem('access_token', data.accessToken);
     localStorage.setItem('refresh_token', data.refreshToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-
-    // Cookies pour SSR
-    document.cookie = `access_token=${data.accessToken}; path=/; max-age=3600`;
-    document.cookie = `user=${JSON.stringify(data.user)}; path=/; max-age=604800`;
+    // Ne pas stocker l'objet user complet (email, id) — utiliser la session NextAuth
   },
 
   clearTokens() {
-    localStorage.clear();
-    document.cookie = 'access_token=; path=/; max-age=0';
-    document.cookie = 'user=; path=/; max-age=0';
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
   }
 };

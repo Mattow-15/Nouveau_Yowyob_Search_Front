@@ -3,9 +3,7 @@ import Link from "next/link";
 import { SearchResult } from '@/types/search';
 import { Star, User, ExternalLink, ChevronRight } from "lucide-react";
 import { getExternalUrl } from './serp/get-external-url';
-import { openExternalLink } from '@/store/external-link-store';
 import { getDirectionsUrl, openDirections } from './serp/get-directions-url';
-import { CoreBadge } from './core-badge';
 
 interface Props {
   item: SearchResult;
@@ -36,8 +34,7 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
 export const ResultListItem: React.FC<Props> = ({ item: result, onClick }) => {
   const displayImage = result.imageUrl || (result.images && result.images.length > 0 ? result.images[0] : null);
 
-  // Lien externe présent ? (site officiel > googleMapsUrl > recherche Google)
-  // L'ouverture passe par openExternalLink() → vérification + confirmation.
+  // URL externe : website > googleMapsUrl > Google Search sur le nom + ".com"
   const externalUrl = getExternalUrl(result);
   const directionsUrl = getDirectionsUrl(result);
 
@@ -46,7 +43,9 @@ export const ResultListItem: React.FC<Props> = ({ item: result, onClick }) => {
 
   const handleCardClick = () => {
     onClick?.(result);
-    openExternalLink(result);
+    if (externalUrl) {
+      window.open(externalUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
@@ -60,8 +59,6 @@ export const ResultListItem: React.FC<Props> = ({ item: result, onClick }) => {
           {result.title || result.name}
           {externalUrl && <ExternalLink size={13} className="opacity-50 flex-shrink-0" />}
         </h3>
-
-        {result.isCore && <CoreBadge className="mt-0.5 mb-1" />}
 
         {/* Ligne 1: Rating et Catégorie */}
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -133,14 +130,15 @@ export const ResultListItem: React.FC<Props> = ({ item: result, onClick }) => {
             </a>
           )}
           {externalUrl && (
-            <button
-              type="button"
-              onClick={() => openExternalLink(result)}
+            <a
+              href={externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-[13px] text-[#70757a] dark:text-gray-400 hover:text-[#1a73e8] hover:underline transition-colors"
             >
               <ExternalLink size={11} />
               Visiter le site
-            </button>
+            </a>
           )}
         </div>
       </div>

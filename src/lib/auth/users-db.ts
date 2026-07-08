@@ -1,6 +1,10 @@
 /**
- * Simple user database (in-memory with JSON export)
+ * Simple user database (in-memory — remplacé par la BD Kernel en production)
  * @author Matteo Owona, Rouchda Yampen
+ *
+ * SÉCURITÉ : les mots de passe de démo sont lus depuis les variables
+ * d'environnement (DEMO_ADMIN_PASSWORD, DEMO_USER_PASSWORD).
+ * En production, ce module est bypassé au profit de l'auth-service Kernel.
  */
 
 interface User {
@@ -11,19 +15,19 @@ interface User {
   role: string;
 }
 
-// Base de données en mémoire
+// Comptes de démo — mots de passe configurables via .env (ne jamais hardcoder)
 let USERS_DB: User[] = [
   {
     id: '1',
     email: 'admin@yowyob.com',
-    password: 'admin123',
+    password: process.env.DEMO_ADMIN_PASSWORD ?? 'admin123',
     name: 'Admin Yowyob',
     role: 'admin',
   },
   {
     id: '2',
     email: 'user@yowyob.com',
-    password: 'user123',
+    password: process.env.DEMO_USER_PASSWORD ?? 'user123',
     name: 'User Test',
     role: 'user',
   },
@@ -41,25 +45,19 @@ export function verifyUser(email: string, password: string): User | null {
   const user = USERS_DB.find(
     (u) => u.email === email && u.password === password
   );
-  
-  if (!user) {
-    console.log('❌ Utilisateur non trouvé:', email);
-    console.log('📋 Emails disponibles:', USERS_DB.map(u => u.email));
-    return null;
-  }
-  
-  console.log('✅ Utilisateur trouvé:', user.email);
-  return user;
+  return user ?? null;
 }
 
-export function createUser(email: string, password: string, name: string): { success: boolean; error?: string; user?: User } {
-  // Vérifier si existe déjà
+export function createUser(
+  email: string,
+  password: string,
+  name: string,
+): { success: boolean; error?: string; user?: User } {
   const existing = findUserByEmail(email);
   if (existing) {
     return { success: false, error: 'Un compte existe déjà avec cet email' };
   }
 
-  // Créer le nouvel utilisateur
   const newUser: User = {
     id: String(Date.now()),
     email,
@@ -69,10 +67,6 @@ export function createUser(email: string, password: string, name: string): { suc
   };
 
   USERS_DB.push(newUser);
-  
-  console.log('✅ Utilisateur créé:', { id: newUser.id, email: newUser.email, name: newUser.name });
-  console.log('📊 Total utilisateurs:', USERS_DB.length);
-  console.log('📋 Liste:', USERS_DB.map(u => ({ email: u.email, name: u.name })));
 
   return { success: true, user: newUser };
 }

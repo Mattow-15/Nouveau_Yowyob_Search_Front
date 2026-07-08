@@ -23,11 +23,13 @@ export default function ForgotPasswordPage() {
     setIsSubmitting(true);
 
     try {
-      // Simuler l'envoi d'email
+      // Simuler l'envoi d'email (remplacer par l'appel API réel)
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Rediriger vers la page de réinitialisation
-      router.push(`/auth/reset-password?email=${encodeURIComponent(email)}`);
+
+      // Stocker l'email en sessionStorage plutôt qu'en URL pour ne pas l'exposer
+      // dans l'historique du navigateur, les logs serveur ou les proxies
+      sessionStorage.setItem('reset_email', email);
+      router.push('/auth/reset-password');
     } catch (err) {
       setError('Une erreur est survenue. Veuillez réessayer.');
       setIsSubmitting(false);

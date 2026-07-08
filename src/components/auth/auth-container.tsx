@@ -35,15 +35,9 @@ export function AuthContainer() {
     setError('');
     setIsLoading(true);
 
-    console.log('=== DÉBUT CONNEXION ===');
-    console.log('Email saisi:', loginData.email);
-    console.log('Password saisi:', loginData.password);
-
     try {
       const formattedEmail = loginData.email.trim().toLowerCase();
       const formattedPassword = loginData.password.trim();
-
-      console.log('🔵 1. Appel signIn manuel pour:', formattedEmail);
 
       const result = await signIn('credentials', {
         email: formattedEmail,
@@ -52,89 +46,62 @@ export function AuthContainer() {
         callbackUrl: '/home'
       });
 
-      console.log('Résultat brut:', result);
-      console.log('result.ok:', result?.ok);
-      console.log('result.error:', result?.error);
-      console.log('result.status:', result?.status);
-      console.log('result.url:', result?.url);
-
       if (result?.error) {
-        console.error('ERREUR:', result.error);
         setError('Email ou mot de passe incorrect');
         setIsLoading(false);
         return;
       }
 
       if (result?.ok) {
-        console.log('✅ Connexion OK, redirection...');
-        // Forcer la redirection
         window.location.href = '/home';
         return;
       }
 
-      console.log('⚠️ Résultat inattendu');
       setError('Erreur de connexion');
       setIsLoading(false);
 
     } catch (err) {
-      console.error('EXCEPTION:', err);
       setError('Une erreur est survenue');
       setIsLoading(false);
     }
-
-    console.log('=== FIN CONNEXION ===');
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    console.log('🔵 1. Début handleRegisterSubmit');
-    console.log('🌍 ENV CHECK - NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-    console.log('🌍 ENV CHECK - NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
-    console.log('Données:', registerData);
-
     // Validation
     if (registerData.password !== registerData.confirmPassword) {
-      console.log('❌ Mots de passe différents');
       setError('Les mots de passe ne correspondent pas');
       return;
     }
 
     if (registerData.password.length < 6) {
-      console.log('❌ Mot de passe trop court');
       setError('Le mot de passe doit contenir au moins 6 caractères');
       return;
     }
 
-    console.log('✅ 2. Validation OK');
     setIsLoading(true);
 
     try {
       const normalizedEmail = registerData.email.trim().toLowerCase();
       const normalizedName = registerData.name.trim();
 
-      // Créer l'utilisateur
-      console.log('🔵 3. Appel registerUser:', { email: normalizedEmail, name: normalizedName });
       const registerResult = await registerUser(
         normalizedEmail,
         registerData.password,
         normalizedName
       );
 
-      console.log('📊 4. Résultat registerUser:', registerResult);
-
       if (!registerResult.success) {
-        console.log('❌ Échec création compte');
         setError(registerResult.error || 'Erreur lors de la création du compte');
         setIsLoading(false);
         return;
       }
 
-      console.log('✅ 5. Compte créé, attente 1500ms (db sync)...');
+      // Attendre la synchronisation avant l'auto-login
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      console.log('🔵 6. Appel signIn (Auto-Login)...');
       let result = await signIn('credentials', {
         email: normalizedEmail,
         password: registerData.password,
@@ -142,9 +109,8 @@ export function AuthContainer() {
         callbackUrl: '/home'
       });
 
-      // RETRY MECHANISM IF FAILED ONCE
+      // Retry une fois si échec
       if (result?.error) {
-        console.warn("⚠️ Premier échec Auto-login. Nouvelle tentative dans 1s...");
         await new Promise((resolve) => setTimeout(resolve, 1000));
         result = await signIn('credentials', {
           email: normalizedEmail,
@@ -154,19 +120,14 @@ export function AuthContainer() {
         });
       }
 
-      console.log('📊 7. Résultat signIn final:', result);
-
       if (result?.ok) {
-        console.log('🎉 9. Auto-login RÉUSSI ! Redirection forcée...');
         setIsLoading(false);
         setRegisterData({ name: '', email: '', password: '', confirmPassword: '' });
-        // Clean redirection for session pick-up
         window.location.href = '/home';
         return;
       }
 
       if (result?.error) {
-        console.log('❌ 8. Echec total Auto-login:', result.error);
         setIsSignUp(false);
         setLoginData({ email: normalizedEmail, password: '' });
         setIsLoading(false);
@@ -174,7 +135,6 @@ export function AuthContainer() {
       }
 
     } catch (err) {
-      console.error('❌ 12. EXCEPTION:', err);
       setError('Erreur lors de l\'inscription');
       setIsLoading(false);
     }

@@ -5,9 +5,7 @@ import { ExternalLink, BadgeCheck } from 'lucide-react';
 import { SearchResult } from '@/types/search';
 import { StarRating } from './star-rating';
 import { getExternalUrl } from './get-external-url';
-import { openExternalLink } from '@/store/external-link-store';
 import { getDirectionsUrl, openDirections } from './get-directions-url';
-import { CoreBadge } from '../core-badge';
 
 interface OrganicResultProps {
   item: SearchResult;
@@ -19,18 +17,20 @@ export function OrganicResult({ item, onClick }: OrganicResultProps) {
   // Statut affiché seulement si réellement connu (openNow booléen). Pas d'horaires fixes → pas de Ouvert/Fermé.
   const isOpen = item.openNow;
 
-  // Lien externe présent ? (site officiel > googleMapsUrl > recherche Google)
-  // L'ouverture passe par openExternalLink() → vérification + confirmation.
   const externalUrl = getExternalUrl(item);
   const directionsUrl = getDirectionsUrl(item);
-  const siteUrl = item.website || item.googleMapsUrl || null;
-  const displayUrl = siteUrl
-    ? siteUrl.replace(/https?:\/\//, '').replace(/\/$/, '').substring(0, 45)
-    : 'google.com/search';
+  const displayUrl = externalUrl
+    ? externalUrl.replace(/https?:\/\//, '').replace(/\/$/, '').substring(0, 55)
+    : `yowyob.com/etablissement/${item.id}`;
 
   const handleTitleClick = () => {
     onClick?.(item);
-    openExternalLink(item);
+    if (externalUrl) {
+      window.open(externalUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      // Pas de site web : on ouvre la fiche interne
+      window.location.href = `/search/${item.id}`;
+    }
   };
 
   return (
@@ -75,8 +75,6 @@ export function OrganicResult({ item, onClick }: OrganicResultProps) {
           Annuaire officiel
         </span>
       )}
-      {/* Insigne « Données du core » — résultats issus du backend de production */}
-      {item.isCore && item.source !== 'KERNEL_ORG' && <CoreBadge className="mb-1" />}
 
       {/* Meta description */}
       <div className="text-[14px] text-[#4d5156] dark:text-gray-300 leading-[1.58] line-clamp-2">

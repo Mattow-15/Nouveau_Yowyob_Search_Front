@@ -36,11 +36,37 @@ const productIcon = new L.Icon({
   popupAnchor: [0, -32],
 });
 
-const userIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI0VGNDQ0NCI+PHBhdGggZD0iTTEyIDJDNy41ODMgMiA0IDUuNTgzIDQgMTBjMCA1LjIxMyA3IDEwIDggMTBzOC00Ljc4NyA4LTEwYzAtNC40MTctMy41ODMtOC04LTh6bTAgMTJhNCA0IDAgMTEtMC0wIDQgNCAwIDAxMCAweiIvPjwvc3ZnPg==',
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
+// Point rouge pulsant — position de l'utilisateur
+const userIcon = L.divIcon({
+  html: `
+    <div style="position:relative;width:28px;height:28px;">
+      <div style="
+        position:absolute;inset:0;
+        background:rgba(220,38,38,0.25);
+        border-radius:50%;
+        animation:pulse-red 1.8s ease-out infinite;
+      "></div>
+      <div style="
+        position:absolute;top:50%;left:50%;
+        transform:translate(-50%,-50%);
+        width:16px;height:16px;
+        background:#DC2626;
+        border:3px solid #fff;
+        border-radius:50%;
+        box-shadow:0 2px 8px rgba(220,38,38,0.6);
+      "></div>
+    </div>
+    <style>
+      @keyframes pulse-red{
+        0%{transform:scale(0.6);opacity:1}
+        100%{transform:scale(2.6);opacity:0}
+      }
+    </style>
+  `,
+  className: '',
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -16],
 });
 
 export const MapView: React.FC<MapViewProps> = ({
@@ -86,9 +112,11 @@ export const MapView: React.FC<MapViewProps> = ({
       map.invalidateSize();
     }, 100);
 
-    // Cleanup: remove map on unmount
+    // Cleanup: stop any running animation before removing to avoid
+    // "_leaflet_pos" crash when _onZoomTransitionEnd fires post-unmount.
     return () => {
       if (mapRef.current) {
+        mapRef.current.stop();
         mapRef.current.remove();
         mapRef.current = null;
       }
@@ -99,7 +127,7 @@ export const MapView: React.FC<MapViewProps> = ({
   // 2. Update center and zoom when they change
   useEffect(() => {
     if (mapRef.current) {
-      mapRef.current.setView(center, zoom);
+      mapRef.current.setView(center, zoom, { animate: false });
     }
   }, [center, zoom]);
 
@@ -130,7 +158,7 @@ export const MapView: React.FC<MapViewProps> = ({
       if (markers.length === 1) {
         mapRef.current.setView(markers[0].position, 15);
       } else {
-        mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+        mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: false });
       }
     }
   }, [markers]);
@@ -145,13 +173,18 @@ export const MapView: React.FC<MapViewProps> = ({
       userMarkerRef.current = null;
     }
 
-    // Add new user marker
+    // Add new user marker and center map on user if no results markers
     if (userLocation) {
-      userMarkerRef.current = L.marker(userLocation, { icon: userIcon })
-        .bindPopup('Votre position')
+      userMarkerRef.current = L.marker(userLocation, { icon: userIcon, zIndexOffset: 1000 })
+        .bindPopup('<div style="font-weight:600;color:#4285F4">📍 Vous êtes ici</div>')
         .addTo(mapRef.current);
+
+      // Centrer sur l'utilisateur si aucun résultat n'est affiché
+      if (markers.length === 0) {
+        mapRef.current.setView(userLocation, 15);
+      }
     }
-  }, [userLocation]);
+  }, [userLocation, markers.length]);
 
   // 5. Update route
   useEffect(() => {
@@ -200,8 +233,7 @@ export const MapView: React.FC<MapViewProps> = ({
       mapRef.current.fitBounds(innerLine.getBounds(), {
         padding: [50, 50],
         maxZoom: 16,
-        animate: true,
-        duration: 1.5
+        animate: false,
       });
     }
   }, [route, transportMode]);

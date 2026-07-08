@@ -17,35 +17,11 @@ class HttpClient {
   private defaultHeaders: HeadersInit;
 
   constructor() {
-    this.baseUrl = HttpClient.resolveBaseUrl();
-    console.log('🔌 API Base URL initialized:', this.baseUrl);
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-  }
-
-  /**
-   * Détermine l'URL de base des appels API.
-   *
-   * - Mode DIRECT : si `NEXT_PUBLIC_API_URL` (ou `_BASE_URL`) est une URL absolue
-   *   (http/https), on l'utilise telle quelle — utile pour taper le back local
-   *   sans proxy (ex. http://localhost:8080).
-   * - Mode PROXY (défaut) : on passe par la route serveur `/api/gateway`, qui relaie
-   *   vers `BACKEND_API_URL` en injectant les clés API côté serveur (cf.
-   *   `src/app/api/gateway/[...path]/route.ts`). Côté navigateur l'URL est relative
-   *   (same-origin) ; côté serveur (SSR / NextAuth) on préfixe par l'origine du front.
-   */
-  private static resolveBaseUrl(): string {
-    const explicit = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (explicit && /^https?:\/\//.test(explicit)) {
-      return explicit;
-    }
-    if (typeof window !== 'undefined') {
-      return '/api/gateway';
-    }
-    const origin = process.env.NEXTAUTH_URL || `http://localhost:${process.env.PORT || 3000}`;
-    return `${origin.replace(/\/$/, '')}/api/gateway`;
   }
 
   private async getAuthToken(): Promise<string | null> {

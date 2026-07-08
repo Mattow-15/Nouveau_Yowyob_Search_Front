@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { HeaderPublic } from '@/components/layout/header-public';
@@ -69,13 +69,30 @@ export default function ProductDetailsPage() {
     const [product, setProduct] = useState<SearchResult | null>(null);
     const [loading, setLoading] = useState(true);
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+    const [geoError, setGeoError] = useState(false);
     const [productActualLocation, setProductActualLocation] = useState<[number, number] | null>(null);
     const [route, setRoute] = useState<Array<[number, number]> | null>(null);
     const [calculatingRoute, setCalculatingRoute] = useState(false);
     const [transportMode, setTransportMode] = useState<'driving' | 'walking' | 'cycling'>('driving');
-    const [routeDetails, setRouteDetails] = useState<{ distance: number; duration: number } | null>(null);
+    const [routeDetails, setRouteDetails] = useState<{ distance: number; duration: number; isEstimate?: boolean } | null>(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [showAllHours, setShowAllHours] = useState(false);
+
+    // watchId ref — démarre seulement après que l'utilisateur a accordé la permission
+    const watchIdRef = React.useRef<number | null>(null);
+
+    const startWatching = React.useCallback(() => {
+        if (watchIdRef.current !== null || !navigator.geolocation) return;
+        watchIdRef.current = navigator.geolocation.watchPosition(
+            pos => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+            () => { /* erreur silencieuse après le premier succès */ },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+        );
+    }, []);
+
+    useEffect(() => () => {
+        if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+    }, []);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -101,47 +118,94 @@ export default function ProductDetailsPage() {
         if (id) fetchProduct();
     }, [id, router]);
 
-    const handleGetDirections = React.useCallback(async () => {
-        if (!product) return;
+    const resolveUserPosition = React.useCallback((): Promise<[number, number]> => {
+        return new Promise(resolve => {
+            // ── Étape 1 : demande GPS navigateur (déclenche la popup d'autorisation) ──
+            if (navigator.geolocation) {
+                toast.loading('Demande d\'autorisation de localisation…', { id: 'geo-req' });
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+                        toast.success('Position GPS obtenue', { id: 'geo-req' });
+                        setUserLocation(coords);
+                        setGeoError(false);
+                        startWatching(); // démarre le suivi continu après accord
+                        resolve(coords);
+                    },
+                    async () => {
+                        // ── Étape 2 : GPS refusé → géoloc par IP ──
+                        toast.loading('GPS refusé — localisation par adresse IP…', { id: 'geo-req' });
+                        setGeoError(true);
+                        const ipLoc = await geoService.getIpLocation().catch(() => null);
+                        if (ipLoc) {
+                            toast.success(
+                                `Position approximative : ${ipLoc.city ?? 'détectée via IP'}`,
+                                { id: 'geo-req' }
+                            );
+                            const coords: [number, number] = [ipLoc.lat, ipLoc.lng];
+                            setUserLocation(coords);
+                            resolve(coords);
+                        } else {
+                            // ── Étape 3 : tout échoue → centre Yaoundé ──
+                            toast.warning('Position introuvable — départ depuis Yaoundé centre', { id: 'geo-req' });
+                            resolve([3.848, 11.5021]);
+                        }
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            } else {
+                // navigateur sans géoloc
+                resolve([3.848, 11.5021]);
+            }
+        });
+    }, [startWatching]);
+
+    // Le mode est passé explicitement pour éviter toute closure stale
+    const handleGetDirections = React.useCallback(async (
+        mode: 'driving' | 'walking' | 'cycling' = transportMode
+    ) => {
+        if (!productActualLocation) return;
         setCalculatingRoute(true);
         setRouteDetails(null);
         try {
-            let location = userLocation ? { lat: userLocation[0], lng: userLocation[1] } : null;
-            if (!location) location = await geoService.getIpLocation();
-            if (!location) { toast.error("Impossible de déterminer votre position"); return; }
-            setUserLocation([location.lat, location.lng]);
-
-            const productLat = productActualLocation?.[0] || 3.848;
-            const productLng = productActualLocation?.[1] || 11.5021;
+            const [startLat, startLng] = userLocation ?? await resolveUserPosition();
 
             const routeInfo = await geoService.getRoute(
-                { lat: location.lat, lng: location.lng },
-                { lat: productLat, lng: productLng },
-                transportMode
+                { lat: startLat, lng: startLng },
+                { lat: productActualLocation[0], lng: productActualLocation[1] },
+                mode
             );
 
             if (routeInfo?.polyline) {
-                try {
-                    const points = JSON.parse(routeInfo.polyline);
-                    setRoute(points);
-                    setRouteDetails({ distance: routeInfo.distance, duration: routeInfo.duration });
-                } catch {
-                    setRoute([[location.lat, location.lng], [productLat, productLng]]);
-                }
-                toast.success('Itinéraire calculé !');
+                const points: [number, number][] = JSON.parse(routeInfo.polyline);
+                setRoute(points);
+                setRouteDetails({ distance: routeInfo.distance, duration: routeInfo.duration, isEstimate: routeInfo.isEstimate });
+                toast.success(routeInfo.isEstimate ? 'Itinéraire estimé (données routières limitées)' : 'Itinéraire calculé !');
             }
         } catch (error) {
-            console.error("Error getting directions:", error);
-            toast.error("Erreur lors du calcul de l'itinéraire");
+            console.error('Erreur itinéraire:', error);
+            toast.error("Impossible de calculer l'itinéraire");
         } finally {
             setCalculatingRoute(false);
         }
-    }, [product, userLocation, transportMode, productActualLocation]);
+    }, [productActualLocation, userLocation, transportMode, resolveUserPosition]);
 
-    useEffect(() => {
-        if (route && userLocation) handleGetDirections();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [transportMode]);
+    // Changer de mode recalcule immédiatement si un itinéraire est déjà affiché
+    const handleModeChange = React.useCallback((newMode: 'driving' | 'walking' | 'cycling') => {
+        setTransportMode(newMode);
+        if (route) handleGetDirections(newMode);
+    }, [route, handleGetDirections]);
+
+    // useMemo AVANT tous les return anticipés (Rules of Hooks)
+    const mapMarkers = useMemo(() => {
+        if (!product || !productActualLocation) return [];
+        return [{
+            id: product.id,
+            position: productActualLocation as [number, number],
+            title: product.title ?? product.name ?? '',
+            description: product.city || '',
+        }];
+    }, [product, productActualLocation]);
 
     if (loading) {
         return (
@@ -404,7 +468,7 @@ export default function ProductDetailsPage() {
                                     {(['driving', 'walking'] as const).map(mode => (
                                         <button
                                             key={mode}
-                                            onClick={() => setTransportMode(mode)}
+                                            onClick={() => handleModeChange(mode)}
                                             className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
                                                 transportMode === mode
                                                     ? 'bg-blue-600 text-white shadow-lg'
@@ -420,29 +484,46 @@ export default function ProductDetailsPage() {
                                 {routeDetails && (
                                     <div className="grid grid-cols-2 gap-3 mb-4">
                                         <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl text-center">
-                                            <div className="text-xs text-gray-500 mb-1">Distance</div>
+                                            <div className="text-xs text-gray-500 mb-1">
+                                                Distance{routeDetails.isEstimate && <span className="ml-1 text-amber-500">~</span>}
+                                            </div>
                                             <div className="text-xl font-black text-blue-600">
+                                                {routeDetails.isEstimate && <span className="text-base">~</span>}
                                                 {(routeDetails.distance / 1000).toFixed(1)}
                                                 <span className="text-sm font-medium text-gray-400"> km</span>
                                             </div>
                                         </div>
                                         <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-xl text-center">
-                                            <div className="text-xs text-gray-500 mb-1">Durée</div>
+                                            <div className="text-xs text-gray-500 mb-1">
+                                                Durée{routeDetails.isEstimate && <span className="ml-1 text-amber-500">~</span>}
+                                            </div>
                                             <div className="text-xl font-black text-green-600">
+                                                {routeDetails.isEstimate && <span className="text-base">~</span>}
                                                 {Math.round(routeDetails.duration / 60)}
                                                 <span className="text-sm font-medium text-gray-400"> min</span>
                                             </div>
                                         </div>
                                     </div>
                                 )}
+                                {routeDetails?.isEstimate && (
+                                    <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center -mt-2 mb-3">
+                                        Estimation — données routières indisponibles pour ce secteur
+                                    </p>
+                                )}
+
+                                {geoError && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2 mb-3">
+                                        Géolocalisation refusée — l&apos;itinéraire partira d&apos;une position approximative.
+                                    </p>
+                                )}
 
                                 <button
                                     onClick={() => {
-                                        if (!route && !calculatingRoute) handleGetDirections();
+                                        handleGetDirections();
                                         document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' });
                                     }}
                                     disabled={calculatingRoute}
-                                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {calculatingRoute ? (
                                         <>
@@ -450,9 +531,21 @@ export default function ProductDetailsPage() {
                                             Calcul en cours...
                                         </>
                                     ) : (
-                                        '📍 Montrer l\'itinéraire'
+                                        '📍 Afficher sur la carte'
                                     )}
                                 </button>
+
+                                {/* Bouton Google Maps pour navigation réelle */}
+                                {productActualLocation && (
+                                    <a
+                                        href={`https://www.google.com/maps/dir/?api=1&destination=${productActualLocation[0]},${productActualLocation[1]}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-2 w-full py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl font-semibold text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        🗺️ Ouvrir dans Google Maps
+                                    </a>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -476,12 +569,7 @@ export default function ProductDetailsPage() {
                             <MapView
                                 center={productActualLocation || [3.848, 11.5021]}
                                 zoom={15}
-                                markers={[{
-                                    id: product.id,
-                                    position: productActualLocation || [3.848, 11.5021],
-                                    title: product.title ?? product.name ?? '',
-                                    description: product.city || ''
-                                }]}
+                                markers={mapMarkers}
                                 userLocation={userLocation || undefined}
                                 route={route || undefined}
                                 transportMode={transportMode}
