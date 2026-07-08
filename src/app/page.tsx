@@ -38,7 +38,7 @@ export default function PublicHomePage() {
           <div className="mb-8 text-center">
             <h1 className="text-6xl md:text-8xl font-black tracking-tight">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600">Yowyob</span>
-              <span className="text-gray-300 dark:text-gray-600 ml-3">Search</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-rose-400 ml-3">Search</span>
             </h1>
             <span className="inline-flex items-center gap-2 mt-3 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-100 dark:border-blue-900/50">
               <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
