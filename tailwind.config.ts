@@ -36,6 +36,7 @@ const config: Config = {
         },
       },
       fontFamily: {
+        roboto: ['var(--font-roboto)', 'Roboto', 'sans-serif'],
         sans: [
           'Inter',
           'ui-sans-serif',

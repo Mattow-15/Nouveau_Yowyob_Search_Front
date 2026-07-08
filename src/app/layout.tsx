@@ -4,7 +4,15 @@
  */
 
 import type { Metadata } from 'next';
+import { Roboto } from 'next/font/google';
 import './globals.css';
+
+const roboto = Roboto({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-roboto',
+  display: 'swap',
+});
 import { QueryProvider } from '@/lib/providers/query-provider';
 import { SessionProvider } from '@/lib/providers/session-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
@@ -30,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className="font-sans antialiased">
+      <body className={`${roboto.variable} font-sans antialiased`}>
         <SessionProvider>
           <ThemeProvider>
             <QueryProvider>

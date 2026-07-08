@@ -281,7 +281,7 @@ export function AiAnswerPanel({
             <span className="text-[13px] text-blue-500 dark:text-blue-400">L&apos;IA analyse les résultats…</span>
           </div>
         ) : (
-          <div className="rounded-xl bg-gradient-to-br from-blue-50/40 to-transparent dark:from-blue-950/10 dark:to-transparent px-4 py-3 border border-blue-100/60 dark:border-blue-900/20">
+          <div className="font-roboto rounded-xl bg-gradient-to-br from-blue-50/40 to-transparent dark:from-blue-950/10 dark:to-transparent px-4 py-3 border border-blue-100/60 dark:border-blue-900/20">
             <Prose text={firstMessage?.content ?? ''} />
             {firstMessage?.streaming && (
               <span className="inline-block w-[3px] h-[15px] bg-blue-500 ml-0.5 animate-pulse rounded-sm align-middle" />
