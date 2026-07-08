@@ -36,11 +36,17 @@ export default function PublicHomePage() {
 
           {/* Logo */}
           <div className="mb-8 text-center">
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600">
-              Yowyob
+            <h1 className="text-6xl md:text-8xl font-black tracking-tight">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600">Yowyob</span>
+              <span className="text-gray-300 dark:text-gray-600 ml-3">Search</span>
             </h1>
-            <span className="text-sm font-semibold tracking-widest text-gray-400 uppercase mt-2 block">
-              Search
+            <span className="inline-flex items-center gap-2 mt-3 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-100 dark:border-blue-900/50">
+              <svg className="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+              </svg>
+              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 tracking-wide">
+                Trouvez tout ce dont vous avez besoin
+              </span>
             </span>
           </div>
 
