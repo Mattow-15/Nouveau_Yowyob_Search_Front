@@ -7,14 +7,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { HeaderPublic } from '@/components/layout/header-public';
-import { Footer } from '@/components/layout/footer';
 import { ConditionalLayout } from '@/components/layout/conditional-layout';
+import { YOWYOB_MENU_SERVICES } from '@/lib/constants/yowyob-services';
 
 export default function PublicHomePage() {
-  const { data: session } = useSession();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -32,12 +29,12 @@ export default function PublicHomePage() {
 
   return (
     <ConditionalLayout>
-
       <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col transition-colors duration-200">
+
         {/* Main Search Area - Google Style */}
-        <main className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 relative">
-          
-          {/* Logo Yowyob */}
+        <main className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6">
+
+          {/* Logo */}
           <div className="mb-8 text-center">
             <h1 className="text-6xl md:text-8xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600">
               Yowyob
@@ -47,7 +44,7 @@ export default function PublicHomePage() {
             </span>
           </div>
 
-          {/* Search Bar Container */}
+          {/* Search Bar */}
           <div className="w-full max-w-2xl mx-auto">
             <div className="relative flex items-center bg-white dark:bg-gray-800 rounded-full shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] border border-gray-200 dark:border-gray-700 transition-all duration-300 px-2 py-2">
               <svg className="w-5 h-5 text-gray-400 ml-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,13 +69,13 @@ export default function PublicHomePage() {
 
           {/* Action Buttons */}
           <div className="flex gap-4 mt-8">
-            <button 
+            <button
               onClick={handleSearch}
               className="px-5 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-md border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all"
             >
               Recherche Yowyob
             </button>
-            <button 
+            <button
               onClick={() => {
                 if (searchQuery.trim()) {
                   router.push(`/search?q=${encodeURIComponent(searchQuery)}&ai=true`);
@@ -87,60 +84,56 @@ export default function PublicHomePage() {
               className="px-5 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-md border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all flex items-center gap-2"
             >
               <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
-                 <path d="M9 21c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4zm12-9c0 .55-.45 1-1 1h-4c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4zm0 9c0 .55-.45 1-1 1h-4c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4zM9 12c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4z"/>
+                <path d="M9 21c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4zm12-9c0 .55-.45 1-1 1h-4c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4zm0 9c0 .55-.45 1-1 1h-4c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4zM9 12c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v4z" />
               </svg>
               Mode IA
             </button>
           </div>
         </main>
 
-        {/* Écosystème Yowyob Icons Grid (Bottom) */}
-        <div className="w-full bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-6">
+        {/* Yowyob Products Grid */}
+        <div className="w-full bg-gray-50 dark:bg-gray-900/80 border-t border-gray-200 dark:border-gray-800 py-8">
           <div className="max-w-4xl mx-auto px-6">
             <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-6">
               Découvrez l'Écosystème Yowyob
             </h3>
-            <div className="flex flex-wrap justify-center gap-8 md:gap-12">
-              <Link href="https://market.yowyob.com" className="flex flex-col items-center group">
-                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
-                  <span className="text-xl">🛍️</span>
-                </div>
-                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Market</span>
-              </Link>
-              
-              <Link href="https://jobs.yowyob.com" className="flex flex-col items-center group">
-                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
-                  <span className="text-xl">💼</span>
-                </div>
-                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Jobs</span>
-              </Link>
-
-              <Link href="https://immo.yowyob.com" className="flex flex-col items-center group">
-                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
-                  <span className="text-xl">🏠</span>
-                </div>
-                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Immo</span>
-              </Link>
-
-              <Link href="https://tours.yowyob.com" className="flex flex-col items-center group">
-                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
-                  <span className="text-xl">✈️</span>
-                </div>
-                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Tours</span>
-              </Link>
-
-              <Link href="https://connect.yowyob.com" className="flex flex-col items-center group">
-                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
-                  <span className="text-xl">🤝</span>
-                </div>
-                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-2 group-hover:text-blue-600 transition-colors">Connect</span>
-              </Link>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 gap-2">
+              {YOWYOB_MENU_SERVICES.map(service => (
+                service.external ? (
+                  <a
+                    key={service.id}
+                    href={service.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-2xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition-all group"
+                  >
+                    <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-0.5">
+                      <span className="text-xl">{service.emoji}</span>
+                    </div>
+                    <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-center leading-tight">
+                      {service.name}
+                    </span>
+                  </a>
+                ) : (
+                  <Link
+                    key={service.id}
+                    href={service.href}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-2xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition-all group"
+                  >
+                    <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-0.5">
+                      <span className="text-xl">{service.emoji}</span>
+                    </div>
+                    <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-center leading-tight">
+                      {service.name}
+                    </span>
+                  </Link>
+                )
+              ))}
             </div>
           </div>
         </div>
 
       </div>
-
     </ConditionalLayout>
   );
 }
