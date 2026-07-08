@@ -113,10 +113,10 @@ export default function PublicHomePage() {
                     rel="noopener noreferrer"
                     className="flex flex-col items-center gap-1.5 p-3 rounded-2xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition-all group"
                   >
-                    <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-0.5">
-                      <span className="text-xl">{service.emoji}</span>
+                    <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
+                      <span className="text-3xl">{service.emoji}</span>
                     </div>
-                    <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-center leading-tight">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-center leading-tight">
                       {service.name}
                     </span>
                   </a>
@@ -126,10 +126,10 @@ export default function PublicHomePage() {
                     href={service.href}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-2xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition-all group"
                   >
-                    <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-0.5">
-                      <span className="text-xl">{service.emoji}</span>
+                    <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
+                      <span className="text-3xl">{service.emoji}</span>
                     </div>
-                    <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-center leading-tight">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-center leading-tight">
                       {service.name}
                     </span>
                   </Link>
