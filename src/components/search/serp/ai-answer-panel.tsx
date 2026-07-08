@@ -32,7 +32,9 @@ interface ContextDoc {
 function parseBold(text: string) {
   const parts = text.split(/\*\*([^*]+)\*\*/g);
   return parts.map((p, i) =>
-    i % 2 === 1 ? <strong key={i} className="font-medium text-gray-900 dark:text-gray-100">{p}</strong> : p
+    i % 2 === 1
+      ? <strong key={i} className="font-semibold text-gray-900 dark:text-white">{p}</strong>
+      : p
   );
 }
 
@@ -45,10 +47,10 @@ function Prose({ text }: { text: string }) {
   const flushUl = (key: string) => {
     if (!ulBuffer.length) return;
     nodes.push(
-      <ul key={key} className="space-y-1 my-2 ml-1">
+      <ul key={key} className="my-3 space-y-2">
         {ulBuffer.map((item, j) => (
-          <li key={j} className="flex gap-2 text-[15px] text-gray-700 dark:text-gray-300 leading-relaxed">
-            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
+          <li key={j} className="flex gap-3 text-[15px] text-gray-700 dark:text-gray-300 leading-7">
+            <span className="mt-2.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0" />
             <span>{parseBold(item)}</span>
           </li>
         ))}
@@ -59,7 +61,7 @@ function Prose({ text }: { text: string }) {
 
   lines.forEach((raw, i) => {
     const line = raw.trim();
-    if (!line) { flushUl(`ul${i}`); nodes.push(<div key={i} className="h-1" />); return; }
+    if (!line) { flushUl(`ul${i}`); return; }
 
     if (line.startsWith('- ') || line.startsWith('• ')) {
       ulBuffer.push(line.slice(2));
@@ -69,8 +71,10 @@ function Prose({ text }: { text: string }) {
     if (numbered) {
       flushUl(`ul${i}`);
       nodes.push(
-        <div key={i} className="flex gap-2.5 items-baseline text-[15px] text-gray-700 dark:text-gray-300 leading-relaxed mb-1">
-          <span className="font-medium text-blue-600 dark:text-blue-400 flex-shrink-0">{numbered[1]}.</span>
+        <div key={i} className="flex gap-3 items-baseline text-[15px] text-gray-700 dark:text-gray-300 leading-7 mb-1">
+          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-500 text-white text-[11px] font-bold flex items-center justify-center translate-y-0.5">
+            {numbered[1]}
+          </span>
           <span>{parseBold(numbered[2])}</span>
         </div>
       );
@@ -78,11 +82,13 @@ function Prose({ text }: { text: string }) {
     }
     flushUl(`ul${i}`);
     nodes.push(
-      <p key={i} className="text-[15px] text-gray-700 dark:text-gray-300 leading-relaxed mb-2">{parseBold(line)}</p>
+      <p key={i} className="text-[15px] text-gray-700 dark:text-gray-300 leading-7 mb-2 last:mb-0">
+        {parseBold(line)}
+      </p>
     );
   });
   flushUl('ul-final');
-  return <>{nodes}</>;
+  return <div className="space-y-0.5">{nodes}</div>;
 }
 
 // ── Favicon helper ────────────────────────────────────────────────
@@ -262,17 +268,20 @@ export function AiAnswerPanel({
       </div>
 
       {/* ── Réponse initiale ── */}
-      <div className="px-5 pb-1">
+      <div className="px-5 pb-2">
         {!firstMessage || firstMessage.streaming ? (
-          <div className="flex gap-1.5 items-center py-2">
-            {[0, 150, 300].map(d => (
-              <span key={d} className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 animate-bounce"
-                style={{ animationDelay: `${d}ms` }} />
-            ))}
-            <span className="text-[13px] text-gray-400 ml-1">L&apos;IA analyse les résultats…</span>
+          <div className="flex gap-2 items-center py-3 px-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/20">
+            <div className="flex gap-1">
+              {[0, 120, 240].map(d => (
+                <span key={d}
+                  className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 animate-bounce"
+                  style={{ animationDelay: `${d}ms` }} />
+              ))}
+            </div>
+            <span className="text-[13px] text-blue-500 dark:text-blue-400">L&apos;IA analyse les résultats…</span>
           </div>
         ) : (
-          <div className="text-[15px] leading-relaxed text-gray-700 dark:text-gray-300">
+          <div className="rounded-xl bg-gradient-to-br from-blue-50/40 to-transparent dark:from-blue-950/10 dark:to-transparent px-4 py-3 border border-blue-100/60 dark:border-blue-900/20">
             <Prose text={firstMessage?.content ?? ''} />
             {firstMessage?.streaming && (
               <span className="inline-block w-[3px] h-[15px] bg-blue-500 ml-0.5 animate-pulse rounded-sm align-middle" />
