@@ -10,6 +10,7 @@ import { useStore } from '@/store';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
+import { YowyobProductsMenu } from './yowyob-products-menu';
 
 export const HeaderPublic: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -67,6 +68,7 @@ export const HeaderPublic: React.FC = () => {
 
           {/* Actions */}
           <div className="hidden md:flex items-center gap-4">
+            <YowyobProductsMenu />
             <ThemeToggle />
             <Link href="/auth">
               <Button variant="primary" size="sm">
