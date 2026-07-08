@@ -249,11 +249,6 @@ export function AiAnswerPanel({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {groqAvailable === false && (
-            <span className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/30">
-              GROQ_API_KEY manquante
-            </span>
-          )}
           {onClose && (
             <button
               onClick={onClose}
