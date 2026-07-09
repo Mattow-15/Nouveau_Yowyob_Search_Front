@@ -39,7 +39,7 @@ function OrbitIcon({ service, index, total, animName, duration, onHover, onLeave
       <div className={`w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-opacity duration-300 ${faded ? 'opacity-30' : 'opacity-100'}`}>
         <span className="text-3xl">{service.emoji}</span>
       </div>
-      <span className={`mt-0.5 text-[5px] font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap transition-opacity duration-300 ${faded ? 'opacity-0' : 'opacity-100'}`}>
+      <span className={`mt-0.5 text-[6px] font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap transition-opacity duration-300 ${faded ? 'opacity-0' : 'opacity-100'}`}>
         {service.name}
       </span>
     </div>
@@ -60,7 +60,7 @@ function OrbitIcon({ service, index, total, animName, duration, onHover, onLeave
 
 function OrbitSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
   const [hovered, setHovered] = useState<typeof services[0] | null>(null);
-  const rx = 420, ry = 110;
+  const rx = 420, ry = 70;
 
   const css = useMemo(() =>
     makeEllipseKeyframes('ell-single', rx, ry, 1),
@@ -163,8 +163,8 @@ export default function PublicHomePage() {
         </main>
 
         {/* Yowyob Products — Orbit */}
-        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-10 flex flex-col items-center bg-gray-50 dark:bg-gray-900/80">
-          <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-6">
+        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-3 flex flex-col items-center bg-gray-50 dark:bg-gray-900/80">
+          <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-2">
             Découvrez l'Écosystème Yowyob
           </h3>
           <OrbitSystem services={YOWYOB_MENU_SERVICES} />
