@@ -39,7 +39,7 @@ function OrbitIcon({ service, index, total, animName, duration, onHover, onLeave
       <div className={`w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-opacity duration-300 ${faded ? 'opacity-30' : 'opacity-100'}`}>
         <span className="text-3xl">{service.emoji}</span>
       </div>
-      <span className={`mt-0.5 text-[6px] font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap transition-opacity duration-300 ${faded ? 'opacity-0' : 'opacity-100'}`}>
+      <span className={`mt-0.5 text-[5px] font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap transition-opacity duration-300 ${faded ? 'opacity-0' : 'opacity-100'}`}>
         {service.name}
       </span>
     </div>
