@@ -11,6 +11,87 @@ import Link from 'next/link';
 import { ConditionalLayout } from '@/components/layout/conditional-layout';
 import { YOWYOB_MENU_SERVICES } from '@/lib/constants/yowyob-services';
 
+function OrbitIcon({ service, x, y, duration, clockwise }: {
+  service: typeof YOWYOB_MENU_SERVICES[0];
+  x: number; y: number;
+  duration: number;
+  clockwise: boolean;
+}) {
+  const counter = clockwise ? 'deorbit-cw' : 'deorbit-ccw';
+  const icon = (
+    <div
+      className="group/icon flex flex-col items-center"
+      style={{ animation: `${counter} ${duration}s linear infinite` }}
+    >
+      <div className="w-11 h-11 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-transform duration-300 group-hover/icon:scale-[2] group-hover/icon:shadow-2xl group-hover/icon:z-50 relative">
+        <span className="text-xl">{service.emoji}</span>
+      </div>
+      <span className="mt-1 text-[9px] font-semibold text-gray-400 dark:text-gray-500 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors whitespace-nowrap">
+        {service.name}
+      </span>
+    </div>
+  );
+  return (
+    <div style={{
+      position: 'absolute', left: '50%', top: '50%',
+      transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+      zIndex: 10,
+    }}>
+      {service.external
+        ? <a href={service.href} target="_blank" rel="noopener noreferrer">{icon}</a>
+        : <Link href={service.href}>{icon}</Link>}
+    </div>
+  );
+}
+
+function OrbitRing({ services, radius, duration, clockwise }: {
+  services: typeof YOWYOB_MENU_SERVICES;
+  radius: number; duration: number; clockwise: boolean;
+}) {
+  const anim = clockwise ? 'orbit-cw' : 'orbit-ccw';
+  return (
+    <div style={{
+      position: 'absolute', inset: 0,
+      animation: `${anim} ${duration}s linear infinite`,
+    }}>
+      {services.map((s, i) => {
+        const angle = (i / services.length) * 2 * Math.PI;
+        return (
+          <OrbitIcon
+            key={s.id} service={s}
+            x={Math.cos(angle) * radius}
+            y={Math.sin(angle) * radius}
+            duration={duration} clockwise={clockwise}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function OrbitSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
+  const inner = services.slice(0, 6);
+  const outer = services.slice(6);
+  const size = 440;
+  const r1 = 95, r2 = 180;
+  return (
+    <div className="relative" style={{ width: size, height: size, maxWidth: '90vw', maxHeight: '90vw' }}>
+      {/* Orbit path rings */}
+      {[r1, r2].map(r => (
+        <div key={r} className="absolute rounded-full border border-gray-200/70 dark:border-gray-700/40"
+          style={{ width: r * 2, height: r * 2, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
+      ))}
+      {/* Center */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg z-20">
+        <span className="text-white font-black text-xs">YS</span>
+      </div>
+      {/* Rings */}
+      <OrbitRing services={inner} radius={r1} duration={22} clockwise={true} />
+      <OrbitRing services={outer} radius={r2} duration={42} clockwise={false} />
+    </div>
+  );
+}
+
 export default function PublicHomePage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,46 +153,12 @@ export default function PublicHomePage() {
 
         </main>
 
-        {/* Yowyob Products Grid */}
-        <div className="w-full bg-gray-50 dark:bg-gray-900/80 border-t border-gray-200 dark:border-gray-800 py-8">
-          <div className="max-w-4xl mx-auto px-6">
-            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-6">
-              Découvrez l'Écosystème Yowyob
-            </h3>
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 gap-2">
-              {YOWYOB_MENU_SERVICES.map(service => (
-                service.external ? (
-                  <a
-                    key={service.id}
-                    href={service.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-2xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition-all group"
-                  >
-                    <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
-                      <span className="text-3xl">{service.emoji}</span>
-                    </div>
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-center leading-tight">
-                      {service.name}
-                    </span>
-                  </a>
-                ) : (
-                  <Link
-                    key={service.id}
-                    href={service.href}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-2xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition-all group"
-                  >
-                    <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-all group-hover:-translate-y-1">
-                      <span className="text-3xl">{service.emoji}</span>
-                    </div>
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-center leading-tight">
-                      {service.name}
-                    </span>
-                  </Link>
-                )
-              ))}
-            </div>
-          </div>
+        {/* Yowyob Products — Orbit */}
+        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-10 flex flex-col items-center bg-gray-50 dark:bg-gray-900/80">
+          <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-6">
+            Découvrez l'Écosystème Yowyob
+          </h3>
+          <OrbitSystem services={YOWYOB_MENU_SERVICES} />
         </div>
 
       </div>
