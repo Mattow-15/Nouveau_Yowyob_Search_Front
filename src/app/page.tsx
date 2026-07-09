@@ -5,97 +5,44 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ConditionalLayout } from '@/components/layout/conditional-layout';
 import { YOWYOB_MENU_SERVICES } from '@/lib/constants/yowyob-services';
 
-function makeEllipseKeyframes(name: string, rx: number, ry: number, dir: 1 | -1): string {
-  const steps = 60;
-  let css = `@keyframes ${name}{`;
-  for (let i = 0; i <= steps; i++) {
-    const a = dir * (i / steps) * 2 * Math.PI;
-    const x = (rx * Math.cos(a)).toFixed(1);
-    const y = (ry * Math.sin(a)).toFixed(1);
-    css += `${((i / steps) * 100).toFixed(1)}%{transform:translate(calc(-50% + ${x}px),calc(-50% + ${y}px))}`;
-  }
-  return css + '}';
+const TICKER_CSS = `
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
+.ticker-track { animation: ticker 28s linear infinite; }
+.ticker-track:hover { animation-play-state: paused; }
+`;
 
-function OrbitIcon({ service, index, total, animName, duration, onHover, onLeave, faded }: {
-  service: typeof YOWYOB_MENU_SERVICES[0];
-  index: number; total: number;
-  animName: string; duration: number;
-  onHover: () => void; onLeave: () => void; faded: boolean;
-}) {
-  const delay = -((index / total) * duration);
-  const inner = (
-    <div
-      className="flex flex-col items-center cursor-pointer"
-      onMouseEnter={onHover}
-      onMouseLeave={onLeave}
-    >
-      <div className={`w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-opacity duration-300 ${faded ? 'opacity-30' : 'opacity-100'}`}>
-        <span className="text-3xl">{service.emoji}</span>
-      </div>
-      <span className={`mt-0.5 text-[6px] font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap transition-opacity duration-300 ${faded ? 'opacity-0' : 'opacity-100'}`}>
-        {service.name}
-      </span>
-    </div>
-  );
-  return (
-    <div style={{
-      position: 'absolute', left: '50%', top: '50%',
-      animation: `${animName} ${duration}s linear infinite`,
-      animationDelay: `${delay}s`,
-      zIndex: 10,
-    }}>
-      {service.external
-        ? <a href={service.href} target="_blank" rel="noopener noreferrer">{inner}</a>
-        : <Link href={service.href}>{inner}</Link>}
-    </div>
-  );
-}
-
-function OrbitSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
-  const [hovered, setHovered] = useState<typeof services[0] | null>(null);
-  const rx = 420, ry = 70;
-
-  const css = useMemo(() =>
-    makeEllipseKeyframes('ell-single', rx, ry, 1),
-  []);
-
+function TickerSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
+  const doubled = [...services, ...services];
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: css }} />
-      <div className="relative" style={{ width: rx * 2 + 60, height: ry * 2 + 80, maxWidth: '98vw' }}>
-        {/* Orbit path décorative */}
-        <div className="absolute border border-gray-200/60 dark:border-gray-700/30 rounded-[50%]"
-          style={{ width: rx * 2, height: ry * 2, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
-
-        {/* Icônes en orbite */}
-        {services.map((s, i) => (
-          <OrbitIcon
-            key={s.id} service={s} index={i} total={services.length}
-            animName="ell-single" duration={36}
-            onHover={() => setHovered(s)}
-            onLeave={() => setHovered(null)}
-            faded={hovered !== null && hovered.id !== s.id}
-          />
-        ))}
-
-        {/* Zoom au centre de l'ellipse */}
-        {hovered && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none flex flex-col items-center animate-[fadeIn_0.15s_ease-out]">
-            <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 flex items-center justify-center">
-              <span className="text-5xl">{hovered.emoji}</span>
-            </div>
-            <span className="mt-2 text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
-              {hovered.name}
-            </span>
-          </div>
-        )}
+      <style dangerouslySetInnerHTML={{ __html: TICKER_CSS }} />
+      <div className="w-full overflow-hidden">
+        <div className="ticker-track flex w-max">
+          {doubled.map((s, i) => {
+            const inner = (
+              <div className="flex flex-col items-center mx-5 group cursor-pointer">
+                <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-110 group-hover:shadow-xl transition-transform duration-200">
+                  <span className="text-5xl">{s.emoji}</span>
+                </div>
+                <span className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  {s.name}
+                </span>
+              </div>
+            );
+            return s.external
+              ? <a key={i} href={s.href} target="_blank" rel="noopener noreferrer">{inner}</a>
+              : <Link key={i} href={s.href}>{inner}</Link>;
+          })}
+        </div>
       </div>
     </>
   );
@@ -162,12 +109,12 @@ export default function PublicHomePage() {
 
         </main>
 
-        {/* Yowyob Products — Orbit */}
-        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-3 flex flex-col items-center bg-gray-50 dark:bg-gray-900/80">
-          <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-2">
+        {/* Yowyob Products — Ticker */}
+        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-4 bg-gray-50 dark:bg-gray-900/80">
+          <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-3">
             Découvrez l'Écosystème Yowyob
           </h3>
-          <OrbitSystem services={YOWYOB_MENU_SERVICES} />
+          <TickerSystem services={YOWYOB_MENU_SERVICES} />
         </div>
 
       </div>
