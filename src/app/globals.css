@@ -61,7 +61,6 @@ body {
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-osx-font-smoothing: grayscale;
-  min-height: 100vh;
 }
 
 /* Smooth scrollbar */
