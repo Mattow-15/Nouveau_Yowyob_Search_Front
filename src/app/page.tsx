@@ -95,7 +95,7 @@ export default function PublicHomePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Chercher sur Yowyob ou saisir une URL"
+                placeholder="Cherchez sur Yowyob"
                 className="flex-1 bg-transparent border-none outline-none text-base md:text-lg text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-3"
               />
               <button
