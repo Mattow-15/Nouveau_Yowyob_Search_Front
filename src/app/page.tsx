@@ -110,7 +110,7 @@ export default function PublicHomePage() {
         </main>
 
         {/* Yowyob Products — Ticker */}
-        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-1 bg-gray-50 dark:bg-gray-900/80">
+        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-5 bg-gray-50 dark:bg-gray-900/80">
           <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-3">
             Découvrez l'Écosystème Yowyob
           </h3>
