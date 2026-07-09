@@ -69,7 +69,7 @@ export default function PublicHomePage() {
       <div className="flex-1 bg-white dark:bg-gray-900 flex flex-col transition-colors duration-200">
 
         {/* Main Search Area - Google Style */}
-        <main className="flex flex-col items-center justify-start pt-12 pb-4 px-4 sm:px-6">
+        <main className="flex flex-col items-center justify-start pt-12 pb-10 px-4 sm:px-6">
 
           {/* Logo */}
           <div className="mb-8 text-center">
