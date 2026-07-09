@@ -30,8 +30,8 @@ function TickerSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
           {doubled.map((s, i) => {
             const inner = (
               <div className="flex flex-col items-center mx-5 group cursor-pointer">
-                <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-110 group-hover:shadow-xl transition-transform duration-200">
-                  <span className="text-5xl">{s.emoji}</span>
+                <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-110 group-hover:shadow-xl transition-transform duration-200">
+                  <span className="text-3xl">{s.emoji}</span>
                 </div>
                 <span className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {s.name}
