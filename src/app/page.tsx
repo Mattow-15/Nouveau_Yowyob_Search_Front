@@ -69,7 +69,7 @@ export default function PublicHomePage() {
       <div className="flex-1 bg-white dark:bg-gray-900 flex flex-col transition-colors duration-200">
 
         {/* Main Search Area - Google Style */}
-        <main className="flex-grow flex flex-col items-center justify-start pt-12 pb-6 px-4 sm:px-6">
+        <main className="flex-grow flex flex-col items-center justify-start pt-12 pb-2 px-4 sm:px-6">
 
           {/* Logo */}
           <div className="mb-8 text-center">
@@ -110,7 +110,7 @@ export default function PublicHomePage() {
         </main>
 
         {/* Yowyob Products — Ticker */}
-        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-4 bg-gray-50 dark:bg-gray-900/80">
+        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-2 bg-gray-50 dark:bg-gray-900/80">
           <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-3">
             Découvrez l'Écosystème Yowyob
           </h3>
