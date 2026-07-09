@@ -66,10 +66,10 @@ export default function PublicHomePage() {
 
   return (
     <ConditionalLayout>
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col transition-colors duration-200">
+      <div className="bg-white dark:bg-gray-900 flex flex-col transition-colors duration-200">
 
         {/* Main Search Area - Google Style */}
-        <main className="flex-grow flex flex-col items-center justify-start pt-12 pb-6 px-4 sm:px-6">
+        <main className="flex flex-col items-center justify-start pt-12 pb-6 px-4 sm:px-6">
 
           {/* Logo */}
           <div className="mb-8 text-center">
