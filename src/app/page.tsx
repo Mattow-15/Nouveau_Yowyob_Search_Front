@@ -23,18 +23,23 @@ function makeEllipseKeyframes(name: string, rx: number, ry: number, dir: 1 | -1)
   return css + '}';
 }
 
-function OrbitIcon({ service, index, total, animName, duration }: {
+function OrbitIcon({ service, index, total, animName, duration, onHover, onLeave, faded }: {
   service: typeof YOWYOB_MENU_SERVICES[0];
   index: number; total: number;
   animName: string; duration: number;
+  onHover: () => void; onLeave: () => void; faded: boolean;
 }) {
   const delay = -((index / total) * duration);
-  const icon = (
-    <div className="group/icon flex flex-col items-center">
-      <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-transform duration-300 group-hover/icon:scale-[2] group-hover/icon:shadow-2xl relative z-10">
+  const inner = (
+    <div
+      className="flex flex-col items-center cursor-pointer"
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+    >
+      <div className={`w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-opacity duration-300 ${faded ? 'opacity-30' : 'opacity-100'}`}>
         <span className="text-3xl">{service.emoji}</span>
       </div>
-      <span className="mt-0.5 text-[7px] font-medium text-gray-400 dark:text-gray-500 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors whitespace-nowrap">
+      <span className={`mt-0.5 text-[6px] font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap transition-opacity duration-300 ${faded ? 'opacity-0' : 'opacity-100'}`}>
         {service.name}
       </span>
     </div>
@@ -47,13 +52,14 @@ function OrbitIcon({ service, index, total, animName, duration }: {
       zIndex: 10,
     }}>
       {service.external
-        ? <a href={service.href} target="_blank" rel="noopener noreferrer">{icon}</a>
-        : <Link href={service.href}>{icon}</Link>}
+        ? <a href={service.href} target="_blank" rel="noopener noreferrer">{inner}</a>
+        : <Link href={service.href}>{inner}</Link>}
     </div>
   );
 }
 
 function OrbitSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
+  const [hovered, setHovered] = useState<typeof services[0] | null>(null);
   const rx = 420, ry = 110;
 
   const css = useMemo(() =>
@@ -67,10 +73,29 @@ function OrbitSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
         {/* Orbit path décorative */}
         <div className="absolute border border-gray-200/60 dark:border-gray-700/30 rounded-[50%]"
           style={{ width: rx * 2, height: ry * 2, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
-        {/* Tous les services sur la même ellipse */}
+
+        {/* Icônes en orbite */}
         {services.map((s, i) => (
-          <OrbitIcon key={s.id} service={s} index={i} total={services.length} animName="ell-single" duration={36} />
+          <OrbitIcon
+            key={s.id} service={s} index={i} total={services.length}
+            animName="ell-single" duration={36}
+            onHover={() => setHovered(s)}
+            onLeave={() => setHovered(null)}
+            faded={hovered !== null && hovered.id !== s.id}
+          />
         ))}
+
+        {/* Zoom au centre de l'ellipse */}
+        {hovered && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none flex flex-col items-center animate-[fadeIn_0.15s_ease-out]">
+            <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 flex items-center justify-center">
+              <span className="text-5xl">{hovered.emoji}</span>
+            </div>
+            <span className="mt-2 text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+              {hovered.name}
+            </span>
+          </div>
+        )}
       </div>
     </>
   );
