@@ -125,7 +125,7 @@ function IntentBanner({ intent, rawQuery }: { intent: ResolvedIntent; rawQuery: 
 // 3. La proximité affine le classement à pertinence comparable (score composite)
 
 function isKernelSource(r: SearchResult): boolean {
-  return r.source === 'KERNEL_ORG';
+  return r.collection === 'organization';
 }
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {

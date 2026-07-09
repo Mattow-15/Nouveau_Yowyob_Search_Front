@@ -54,6 +54,8 @@ function parseLocation(item: any): { lat: number; lng: number } | undefined {
 /** Normalise un hit API sans injecter de PII fictive (règle d'or checklist §4). */
 function normalizeSearchResult(item: any): SearchResult {
   const location = parseLocation(item);
+  // SearchDoc stores original payload in item.source (object) — extract top-level fields from it
+  const src = item.source && typeof item.source === 'object' ? item.source : {};
   const shop = item.shop
     ? {
         ...item.shop,
@@ -64,7 +66,7 @@ function normalizeSearchResult(item: any): SearchResult {
 
   return {
     ...item,
-    name: item.name || item.title || 'Sans nom',
+    name: item.name || item.title || src.name || 'Sans nom',
     type:
       (item.type?.toLowerCase() === 'listing'
         ? 'product'
@@ -74,12 +76,14 @@ function normalizeSearchResult(item: any): SearchResult {
     ...(item.images?.length ? { images: item.images } : item.imageUrl ? { images: [item.imageUrl] } : {}),
     ...(shop ? { shop } : {}),
     ...(location ? { location } : {}),
-    ...(item.phone ? { phone: item.phone } : {}),
-    ...(item.website ? { website: item.website } : {}),
-    city: item.city || '',
-    quartier: item.quartier || '',
-    tags: item.tags || [item.category].filter(Boolean) || [],
-    detailsUrl: item.website || `/search/${item.id}`,
+    phone: item.phone || src.phone || undefined,
+    website: item.website || src.website || undefined,
+    city: item.city || src.city || '',
+    quartier: item.quartier || src.quartier || '',
+    category: item.category || src.category || undefined,
+    description: item.description || src.description || undefined,
+    tags: item.tags || [item.category || src.category].filter(Boolean) || [],
+    detailsUrl: item.website || src.website || `/search/${item.id}`,
   };
 }
 
@@ -89,6 +93,8 @@ class SearchService {
 
     try {
       // ── Étape 1 : recherche géolocalisée (near-me avec coords réelles) ──
+      // near-me ne retourne que la collection "places" (OSM). On fetch en parallèle
+      // la recherche globale pour récupérer les organisations Kernel et les merger.
       if (hasCoords) {
         const geoParams = new URLSearchParams();
         if (filters.query)      geoParams.append('q',         filters.query);
@@ -98,15 +104,28 @@ class SearchService {
         geoParams.append('longitude', filters.longitude!.toString());
         if (filters.radius)   geoParams.append('radius',    filters.radius.toString());
 
-        try {
-          const geoResponse = await httpClient.get<any>(
-            `${API_ENDPOINTS.SEARCH}/near-me?${geoParams.toString()}`
-          );
-          const geoResults = (geoResponse.results || []).map(normalizeSearchResult);
+        const globalParams = new URLSearchParams();
+        if (filters.query)      globalParams.append('q',        filters.query);
+        if (filters.type)       globalParams.append('type',     filters.type);
+        if (filters.esCategory) globalParams.append('category', filters.esCategory);
 
-          // Si la recherche géo a retourné des résultats → on les utilise
-          if (geoResults.length > 0) {
-            return { results: geoResults, total: geoResponse.total || geoResults.length, page: filters.page || 1, success: true };
+        try {
+          const [geoResponse, globalResponse] = await Promise.all([
+            httpClient.get<any>(`${API_ENDPOINTS.SEARCH}/near-me?${geoParams.toString()}`),
+            httpClient.get<any>(`${API_ENDPOINTS.SEARCH}?${globalParams.toString()}`).catch(() => ({ results: [] })),
+          ]);
+          const geoResults = (geoResponse.results || []).map(normalizeSearchResult);
+          // Organisations Kernel issues de la recherche globale (near-me ne les retourne pas)
+          const orgResults = ((globalResponse as any).results || [])
+            .filter((r: any) => r.collection === 'organization')
+            .map(normalizeSearchResult);
+
+          if (geoResults.length > 0 || orgResults.length > 0) {
+            // Orgs en tête, puis places géo (dédupliqués par id)
+            const orgIds = new Set(orgResults.map((r: any) => r.id));
+            const dedupedGeo = geoResults.filter((r: any) => !orgIds.has(r.id));
+            const merged = [...orgResults, ...dedupedGeo];
+            return { results: merged, total: merged.length, page: filters.page || 1, success: true };
           }
         } catch {
           // near-me indisponible → on continue vers le fallback

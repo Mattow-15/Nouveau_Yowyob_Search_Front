@@ -69,7 +69,7 @@ export function OrganicResult({ item, onClick }: OrganicResultProps) {
         {externalUrl && <ExternalLink size={14} className="opacity-40 flex-shrink-0" />}
       </h3>
       {/* Badge Annuaire officiel — visible uniquement pour les agences Kernel */}
-      {item.source === 'KERNEL_ORG' && (
+      {item.collection === 'organization' && (
         <span className="inline-flex items-center gap-1 mb-1 bg-emerald-600 text-white rounded-full px-2.5 py-0.5 text-[11px] font-medium">
           <BadgeCheck size={12} />
           Annuaire officiel

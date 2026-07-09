@@ -19,7 +19,8 @@ export interface SearchResult {
   phone?: string;
   website?: string;
   openingHours?: string;
-  source?: string;
+  source?: string | Record<string, any>;
+  collection?: string;
 
   location?: {
     lat: number;
