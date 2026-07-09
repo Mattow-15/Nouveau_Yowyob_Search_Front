@@ -56,8 +56,8 @@ function OrbitIcon({ service, index, total, animName, duration }: {
 function OrbitSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
   const inner = services.slice(0, 6);
   const outer = services.slice(6);
-  const rx1 = 115, ry1 = 50;
-  const rx2 = 205, ry2 = 90;
+  const rx1 = 200, ry1 = 60;
+  const rx2 = 340, ry2 = 105;
 
   const css = useMemo(() => [
     makeEllipseKeyframes('ell-inner', rx1, ry1, 1),
@@ -67,7 +67,7 @@ function OrbitSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: css }} />
-      <div className="relative" style={{ width: 470, height: 230, maxWidth: '94vw' }}>
+      <div className="relative" style={{ width: 740, height: 270, maxWidth: '96vw' }}>
         {/* Orbit paths decoratives */}
         {[{ rx: rx1, ry: ry1 }, { rx: rx2, ry: ry2 }].map(({ rx, ry }) => (
           <div key={rx} className="absolute border border-gray-200/60 dark:border-gray-700/30 rounded-[50%]"
