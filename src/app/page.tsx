@@ -31,10 +31,10 @@ function OrbitIcon({ service, index, total, animName, duration }: {
   const delay = -((index / total) * duration);
   const icon = (
     <div className="group/icon flex flex-col items-center">
-      <div className="w-11 h-11 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-transform duration-300 group-hover/icon:scale-[2.2] group-hover/icon:shadow-2xl relative z-10">
-        <span className="text-xl">{service.emoji}</span>
+      <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-transform duration-300 group-hover/icon:scale-[2] group-hover/icon:shadow-2xl relative z-10">
+        <span className="text-3xl">{service.emoji}</span>
       </div>
-      <span className="mt-0.5 text-[9px] font-semibold text-gray-400 dark:text-gray-500 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors whitespace-nowrap">
+      <span className="mt-0.5 text-[7px] font-medium text-gray-400 dark:text-gray-500 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors whitespace-nowrap">
         {service.name}
       </span>
     </div>
