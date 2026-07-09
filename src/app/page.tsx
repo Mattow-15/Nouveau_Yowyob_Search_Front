@@ -54,31 +54,22 @@ function OrbitIcon({ service, index, total, animName, duration }: {
 }
 
 function OrbitSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
-  const inner = services.slice(0, 6);
-  const outer = services.slice(6);
-  const rx1 = 200, ry1 = 60;
-  const rx2 = 340, ry2 = 105;
+  const rx = 420, ry = 110;
 
-  const css = useMemo(() => [
-    makeEllipseKeyframes('ell-inner', rx1, ry1, 1),
-    makeEllipseKeyframes('ell-outer', rx2, ry2, -1),
-  ].join('\n'), []);
+  const css = useMemo(() =>
+    makeEllipseKeyframes('ell-single', rx, ry, 1),
+  []);
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: css }} />
-      <div className="relative" style={{ width: 740, height: 270, maxWidth: '96vw' }}>
-        {/* Orbit paths decoratives */}
-        {[{ rx: rx1, ry: ry1 }, { rx: rx2, ry: ry2 }].map(({ rx, ry }) => (
-          <div key={rx} className="absolute border border-gray-200/60 dark:border-gray-700/30 rounded-[50%]"
-            style={{ width: rx * 2, height: ry * 2, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
-        ))}
-        {/* Icons */}
-        {inner.map((s, i) => (
-          <OrbitIcon key={s.id} service={s} index={i} total={inner.length} animName="ell-inner" duration={22} />
-        ))}
-        {outer.map((s, i) => (
-          <OrbitIcon key={s.id} service={s} index={i} total={outer.length} animName="ell-outer" duration={42} />
+      <div className="relative" style={{ width: rx * 2 + 60, height: ry * 2 + 80, maxWidth: '98vw' }}>
+        {/* Orbit path décorative */}
+        <div className="absolute border border-gray-200/60 dark:border-gray-700/30 rounded-[50%]"
+          style={{ width: rx * 2, height: ry * 2, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
+        {/* Tous les services sur la même ellipse */}
+        {services.map((s, i) => (
+          <OrbitIcon key={s.id} service={s} index={i} total={services.length} animName="ell-single" duration={36} />
         ))}
       </div>
     </>
