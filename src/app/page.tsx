@@ -5,28 +5,36 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ConditionalLayout } from '@/components/layout/conditional-layout';
 import { YOWYOB_MENU_SERVICES } from '@/lib/constants/yowyob-services';
 
-function OrbitIcon({ service, x, y, duration, clockwise }: {
+function makeEllipseKeyframes(name: string, rx: number, ry: number, dir: 1 | -1): string {
+  const steps = 60;
+  let css = `@keyframes ${name}{`;
+  for (let i = 0; i <= steps; i++) {
+    const a = dir * (i / steps) * 2 * Math.PI;
+    const x = (rx * Math.cos(a)).toFixed(1);
+    const y = (ry * Math.sin(a)).toFixed(1);
+    css += `${((i / steps) * 100).toFixed(1)}%{transform:translate(calc(-50% + ${x}px),calc(-50% + ${y}px))}`;
+  }
+  return css + '}';
+}
+
+function OrbitIcon({ service, index, total, animName, duration }: {
   service: typeof YOWYOB_MENU_SERVICES[0];
-  x: number; y: number;
-  duration: number;
-  clockwise: boolean;
+  index: number; total: number;
+  animName: string; duration: number;
 }) {
-  const counter = clockwise ? 'deorbit-cw' : 'deorbit-ccw';
+  const delay = -((index / total) * duration);
   const icon = (
-    <div
-      className="group/icon flex flex-col items-center"
-      style={{ animation: `${counter} ${duration}s linear infinite` }}
-    >
-      <div className="w-11 h-11 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-transform duration-300 group-hover/icon:scale-[2] group-hover/icon:shadow-2xl group-hover/icon:z-50 relative">
+    <div className="group/icon flex flex-col items-center">
+      <div className="w-11 h-11 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center transition-transform duration-300 group-hover/icon:scale-[2.2] group-hover/icon:shadow-2xl relative z-10">
         <span className="text-xl">{service.emoji}</span>
       </div>
-      <span className="mt-1 text-[9px] font-semibold text-gray-400 dark:text-gray-500 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors whitespace-nowrap">
+      <span className="mt-0.5 text-[9px] font-semibold text-gray-400 dark:text-gray-500 group-hover/icon:text-blue-600 dark:group-hover/icon:text-blue-400 transition-colors whitespace-nowrap">
         {service.name}
       </span>
     </div>
@@ -34,7 +42,8 @@ function OrbitIcon({ service, x, y, duration, clockwise }: {
   return (
     <div style={{
       position: 'absolute', left: '50%', top: '50%',
-      transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+      animation: `${animName} ${duration}s linear infinite`,
+      animationDelay: `${delay}s`,
       zIndex: 10,
     }}>
       {service.external
@@ -44,51 +53,35 @@ function OrbitIcon({ service, x, y, duration, clockwise }: {
   );
 }
 
-function OrbitRing({ services, radius, duration, clockwise }: {
-  services: typeof YOWYOB_MENU_SERVICES;
-  radius: number; duration: number; clockwise: boolean;
-}) {
-  const anim = clockwise ? 'orbit-cw' : 'orbit-ccw';
-  return (
-    <div style={{
-      position: 'absolute', inset: 0,
-      animation: `${anim} ${duration}s linear infinite`,
-    }}>
-      {services.map((s, i) => {
-        const angle = (i / services.length) * 2 * Math.PI;
-        return (
-          <OrbitIcon
-            key={s.id} service={s}
-            x={Math.cos(angle) * radius}
-            y={Math.sin(angle) * radius}
-            duration={duration} clockwise={clockwise}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
 function OrbitSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
   const inner = services.slice(0, 6);
   const outer = services.slice(6);
-  const size = 440;
-  const r1 = 95, r2 = 180;
+  const rx1 = 115, ry1 = 50;
+  const rx2 = 205, ry2 = 90;
+
+  const css = useMemo(() => [
+    makeEllipseKeyframes('ell-inner', rx1, ry1, 1),
+    makeEllipseKeyframes('ell-outer', rx2, ry2, -1),
+  ].join('\n'), []);
+
   return (
-    <div className="relative" style={{ width: size, height: size, maxWidth: '90vw', maxHeight: '90vw' }}>
-      {/* Orbit path rings */}
-      {[r1, r2].map(r => (
-        <div key={r} className="absolute rounded-full border border-gray-200/70 dark:border-gray-700/40"
-          style={{ width: r * 2, height: r * 2, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-      ))}
-      {/* Center */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg z-20">
-        <span className="text-white font-black text-xs">YS</span>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: css }} />
+      <div className="relative" style={{ width: 470, height: 230, maxWidth: '94vw' }}>
+        {/* Orbit paths decoratives */}
+        {[{ rx: rx1, ry: ry1 }, { rx: rx2, ry: ry2 }].map(({ rx, ry }) => (
+          <div key={rx} className="absolute border border-gray-200/60 dark:border-gray-700/30 rounded-[50%]"
+            style={{ width: rx * 2, height: ry * 2, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
+        ))}
+        {/* Icons */}
+        {inner.map((s, i) => (
+          <OrbitIcon key={s.id} service={s} index={i} total={inner.length} animName="ell-inner" duration={22} />
+        ))}
+        {outer.map((s, i) => (
+          <OrbitIcon key={s.id} service={s} index={i} total={outer.length} animName="ell-outer" duration={42} />
+        ))}
       </div>
-      {/* Rings */}
-      <OrbitRing services={inner} radius={r1} duration={22} clockwise={true} />
-      <OrbitRing services={outer} radius={r2} duration={42} clockwise={false} />
-    </div>
+    </>
   );
 }
 

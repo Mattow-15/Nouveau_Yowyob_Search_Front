@@ -318,20 +318,3 @@ body {
   }
 }
 
-/* ── Orbit animations ───────────────────────────────────────────── */
-@keyframes orbit-cw {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes orbit-ccw {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(-360deg); }
-}
-@keyframes deorbit-cw {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(-360deg); }
-}
-@keyframes deorbit-ccw {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
