@@ -29,11 +29,11 @@ function TickerSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
         <div className="ticker-track flex w-max">
           {doubled.map((s, i) => {
             const inner = (
-              <div className="flex flex-col items-center mx-5 group cursor-pointer">
-                <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-150 group-hover:shadow-xl transition-transform duration-200">
-                  <span className="text-3xl">{s.emoji}</span>
+              <div className="flex flex-col items-center mx-4 group cursor-pointer">
+                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-125 group-hover:shadow-xl transition-transform duration-200">
+                  <span className="text-xl">{s.emoji}</span>
                 </div>
-                <span className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                <span className="mt-1 text-[10px] font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   {s.name}
                 </span>
               </div>
@@ -109,9 +109,9 @@ export default function PublicHomePage() {
 
         </main>
 
-        {/* Yowyob Products — Ticker */}
-        <div className="w-full border-t border-gray-200 dark:border-gray-800 py-5 bg-gray-50 dark:bg-gray-900/80">
-          <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-3">
+        {/* Yowyob Products — Ticker (collé au footer) */}
+        <div className="w-full mt-auto border-t border-gray-200 dark:border-gray-800 py-3 bg-gray-50 dark:bg-gray-900/80">
+          <h3 className="text-[9px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest mb-2">
             Découvrez l'Écosystème Yowyob
           </h3>
           <TickerSystem services={YOWYOB_MENU_SERVICES} />
