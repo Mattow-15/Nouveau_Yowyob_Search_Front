@@ -17,7 +17,7 @@ class HttpClient {
   private defaultHeaders: HeadersInit;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || '';
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',

@@ -18,6 +18,7 @@ export interface SearchResult {
   images?: string[];
   phone?: string;
   website?: string;
+  logoUrl?: string;
   openingHours?: string;
   source?: string | Record<string, any>;
   collection?: string;

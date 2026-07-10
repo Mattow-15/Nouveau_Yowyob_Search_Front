@@ -4,22 +4,55 @@ import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { YOWYOB_MENU_SERVICES, type YowyobService } from '@/lib/constants/yowyob-services';
 
-// Mots-clés pour suggérer un service en priorité selon la requête
-const KEYWORD_MAP: { ids: string[]; re: RegExp }[] = [
-  { ids: ['accounting', 'cashier', 'banking'],    re: /\b(compt|factur|banque|paiement|caisse|financ|bilan|tresor)/i },
-  { ids: ['hrm'],                                  re: /\b(employ|rh|ressource.humaine|recrutement|salaire|congé|personnel)/i },
-  { ids: ['fleetman'],                             re: /\b(flotte|vehicule|camion|livraison|transport|chauffeur|fleet)/i },
-  { ids: ['geofence'],                             re: /\b(geo|zone|localisa|carte|positon|geofenc)/i },
-  { ids: ['tiibntick', 'tiibntick-market'],        re: /\b(ticket|billet|reservat|event|evenement|excursion|voyage|concert)/i },
-  { ids: ['tiibntick-go', 'tiibntick-agency'],     re: /\b(freelance|mission|agence|prestataire|service.a.domicile)/i },
-  { ids: ['payment'],                              re: /\b(paiement|payer|transfert|mobile.money|mtn|orange.money)/i },
+// Score de pertinence par service selon la requête (plusieurs services peuvent matcher)
+const RELEVANCE_RULES: { ids: string[]; score: number; re: RegExp }[] = [
+  // Restauration & commerces
+  { ids: ['tiibntick', 'tiibntick-market'], score: 3, re: /\b(restaurant|manger|bouffer|repas|food|cuisine|café|boulanger|pâtiss)/i },
+  { ids: ['cashier'],                        score: 2, re: /\b(restaurant|commerce|boutique|magasin|vente|caisse|supermarché|épicerie)/i },
+  { ids: ['payment'],                        score: 2, re: /\b(restaurant|commerce|boutique|magasin|payer|prix|achat)/i },
+
+  // Hôtellerie & voyages
+  { ids: ['tiibntick', 'tiibntick-market'], score: 3, re: /\b(hôtel|hotel|hébergement|chambre|logement|auberge|séjour|voyage|excursion)/i },
+  { ids: ['tiibntick-go'],                  score: 2, re: /\b(voyage|excursion|guide|tourisme|tour)/i },
+
+  // Transport & livraison
+  { ids: ['fleetman'],                      score: 3, re: /\b(transport|flotte|véhicule|camion|livraison|chauffeur|bus|taxi|colis)/i },
+  { ids: ['tiibntick-point'],               score: 2, re: /\b(livraison|colis|relais|ramassage|point.de.collect)/i },
+  { ids: ['geofence'],                      score: 2, re: /\b(transport|localisa|suivi|géo|tracé|itinéraire|zone)/i },
+
+  // Événements & tickets
+  { ids: ['tiibntick', 'tiibntick-market'], score: 3, re: /\b(ticket|billet|réservat|event|événement|concert|spectacle|match|festival)/i },
+  { ids: ['tiibntick-agency'],              score: 2, re: /\b(event|événement|organis|agence.event)/i },
+
+  // Emploi & freelance
+  { ids: ['tiibntick-go'],                  score: 3, re: /\b(freelance|mission|emploi|travail|job|recrutement|prestataire|service.à.domicile|plombier|électricien|menuisier)/i },
+  { ids: ['hrm'],                           score: 3, re: /\b(rh|ressource.humaine|employ|salaire|personnel|congé|recrutement|staff)/i },
+  { ids: ['tiibntick-agency'],              score: 2, re: /\b(agence|prestataire|sous.traitan)/i },
+
+  // Finances & paiements
+  { ids: ['payment'],                       score: 3, re: /\b(paiement|payer|transfert|mobile.money|mtn|orange.money|wave|virement)/i },
+  { ids: ['banking'],                       score: 3, re: /\b(banque|épargne|crédit|prêt|trésor|finance)/i },
+  { ids: ['accounting'],                    score: 3, re: /\b(compt|factur|bilan|fiscal|tva|déclaration|audit)/i },
+  { ids: ['cashier'],                       score: 2, re: /\b(caisse|vente|pos|point.de.vente|encaissement)/i },
+  { ids: ['billing-api'],                   score: 2, re: /\b(factur|abonnement|invoice)/i },
+
+  // Géolocalisation
+  { ids: ['geofence'],                      score: 3, re: /\b(géo|zone|localisa|carte|position|géofenc|périmètre)/i },
 ];
 
-function detectHighlight(query: string): string | null {
-  for (const { ids, re } of KEYWORD_MAP) {
-    if (re.test(query)) return ids[0];
+function rankServices(query: string): string[] {
+  const scores: Record<string, number> = {};
+  for (const { ids, score, re } of RELEVANCE_RULES) {
+    if (re.test(query)) {
+      for (const id of ids) {
+        scores[id] = (scores[id] || 0) + score;
+      }
+    }
   }
-  return null;
+  return Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([id]) => id);
 }
 
 interface YowyobServicePanelProps {
@@ -29,9 +62,12 @@ interface YowyobServicePanelProps {
 export function YowyobServicePanel({ query }: YowyobServicePanelProps) {
   if (!query.trim()) return null;
 
-  const highlightId = detectHighlight(query);
-  const highlighted = highlightId ? YOWYOB_MENU_SERVICES.find(s => s.id === highlightId) : null;
-  const rest = YOWYOB_MENU_SERVICES.filter(s => s.id !== highlightId);
+  const topIds = rankServices(query);
+  const topServices = topIds
+    .map(id => YOWYOB_MENU_SERVICES.find(s => s.id === id))
+    .filter(Boolean) as YowyobService[];
+  const topIdSet = new Set(topIds);
+  const rest = YOWYOB_MENU_SERVICES.filter(s => !topIdSet.has(s.id));
 
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm bg-white dark:bg-gray-900">
@@ -45,12 +81,21 @@ export function YowyobServicePanel({ query }: YowyobServicePanelProps) {
       </div>
 
       <div className="p-3 flex flex-col gap-2">
-        {/* Service mis en avant si la requête correspond */}
-        {highlighted && (
-          <ServiceCard service={highlighted} featured />
+        {/* Services les plus pertinents pour cette requête */}
+        {topServices.length > 0 && (
+          <div className="flex flex-col gap-1">
+            {topServices.length > 0 && (
+              <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest px-1 mb-0.5">
+                Recommandés pour vous
+              </p>
+            )}
+            {topServices.map((service, i) => (
+              <ServiceCard key={service.id} service={service} featured={i === 0} />
+            ))}
+          </div>
         )}
 
-        {/* Grille compacte de tous les services */}
+        {/* Grille compacte du reste */}
         <div className="grid grid-cols-3 gap-1">
           {rest.map(service => (
             <MiniServiceCard key={service.id} service={service} />

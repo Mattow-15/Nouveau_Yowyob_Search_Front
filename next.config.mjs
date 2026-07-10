@@ -1,6 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  // Redirige les appels backend vers le gateway Next.js (qui ajoute les auth headers).
+  // Permet au frontend local de taper sur le backend déployé sans exposer les clés API.
+  async rewrites() {
+    return [
+      { source: '/api/search/:path*', destination: '/api/gateway/api/search/:path*' },
+      { source: '/api/users/:path*',  destination: '/api/gateway/api/users/:path*' },
+      { source: '/api/index/:path*',  destination: '/api/gateway/api/index/:path*' },
+    ];
+  },
   
   // Internationalisation
   i18n: {

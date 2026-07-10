@@ -78,12 +78,13 @@ function normalizeSearchResult(item: any): SearchResult {
     ...(location ? { location } : {}),
     phone: item.phone || src.phone || undefined,
     website: item.website || src.website || undefined,
+    logoUrl: item.logoUrl || src.logoUrl || undefined,
     city: item.city || src.city || '',
     quartier: item.quartier || src.quartier || '',
     category: item.category || src.category || undefined,
     description: item.description || src.description || undefined,
     tags: item.tags || [item.category || src.category].filter(Boolean) || [],
-    detailsUrl: item.website || src.website || `/search/${item.id}`,
+    detailsUrl: item.website || src.website || item.logoUrl || src.logoUrl || `/search/${item.id}`,
   };
 }
 
@@ -92,45 +93,10 @@ class SearchService {
     const hasCoords = filters.latitude != null && filters.longitude != null;
 
     try {
-      // ── Étape 1 : recherche géolocalisée (near-me avec coords réelles) ──
-      // near-me ne retourne que la collection "places" (OSM). On fetch en parallèle
-      // la recherche globale pour récupérer les organisations Kernel et les merger.
-      if (hasCoords) {
-        const geoParams = new URLSearchParams();
-        if (filters.query)      geoParams.append('q',         filters.query);
-        if (filters.type)       geoParams.append('type',      filters.type);
-        if (filters.esCategory) geoParams.append('category',  filters.esCategory);
-        geoParams.append('latitude',  filters.latitude!.toString());
-        geoParams.append('longitude', filters.longitude!.toString());
-        if (filters.radius)   geoParams.append('radius',    filters.radius.toString());
-
-        const globalParams = new URLSearchParams();
-        if (filters.query)      globalParams.append('q',        filters.query);
-        if (filters.type)       globalParams.append('type',     filters.type);
-        if (filters.esCategory) globalParams.append('category', filters.esCategory);
-
-        try {
-          const [geoResponse, globalResponse] = await Promise.all([
-            httpClient.get<any>(`${API_ENDPOINTS.SEARCH}/near-me?${geoParams.toString()}`),
-            httpClient.get<any>(`${API_ENDPOINTS.SEARCH}?${globalParams.toString()}`).catch(() => ({ results: [] })),
-          ]);
-          const geoResults = (geoResponse.results || []).map(normalizeSearchResult);
-          // Organisations Kernel issues de la recherche globale (near-me ne les retourne pas)
-          const orgResults = ((globalResponse as any).results || [])
-            .filter((r: any) => r.collection === 'organization')
-            .map(normalizeSearchResult);
-
-          if (geoResults.length > 0 || orgResults.length > 0) {
-            // Orgs en tête, puis places géo (dédupliqués par id)
-            const orgIds = new Set(orgResults.map((r: any) => r.id));
-            const dedupedGeo = geoResults.filter((r: any) => !orgIds.has(r.id));
-            const merged = [...orgResults, ...dedupedGeo];
-            return { results: merged, total: merged.length, page: filters.page || 1, success: true };
-          }
-        } catch {
-          // near-me indisponible → on continue vers le fallback
-        }
-      }
+      // ── Étape 1 : recherche sémantique principale (/api/search, kNN) ──
+      // near-me ignoré : il filtre par rayon géographique sans tenir compte de l'intention
+      // sémantique (ex. "je veux gérer mon argent" retourne des restaurants proches).
+      // Le classement par proximité est appliqué côté frontend dans prioritizeResults.
 
       // ── Étape 2 : fallback sur /api/search avec city si disponible ──
       // (quand near-me retourne vide ou quand il n'y a pas de coords)

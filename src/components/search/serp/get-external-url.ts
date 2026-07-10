@@ -46,6 +46,9 @@ export function getExternalUrl(item: SearchResult): string | null {
   }
   if (item.googleMapsUrl) return item.googleMapsUrl;
 
+  // Pour les organisations Kernel sans website : utiliser le logoUrl comme lien temporaire
+  if (item.collection === 'organization' && item.logoUrl) return item.logoUrl;
+
   const lat = item.latitude ?? (item.location as any)?.lat;
   const lng = item.longitude ?? (item.location as any)?.lng;
   const name = item.title || item.name;
@@ -67,6 +70,9 @@ export function getExternalTarget(item: SearchResult): { url: string | null; isO
   const hasWebsite = !!(item.website && !item.website.includes('@') && !isCorporateDomain(item.website));
   if (hasWebsite) {
     return { url: normalizeUrl(item.website!), isOfficial: true };
+  }
+  if (item.collection === 'organization' && item.logoUrl) {
+    return { url: item.logoUrl, isOfficial: true };
   }
   return { url: getExternalUrl(item), isOfficial: false };
 }
