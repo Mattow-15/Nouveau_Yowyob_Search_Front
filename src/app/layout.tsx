@@ -16,6 +16,7 @@ const roboto = Roboto({
 import { QueryProvider } from '@/lib/providers/query-provider';
 import { SessionProvider } from '@/lib/providers/session-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
+import { GeolocationBootstrap } from '@/components/providers/geolocation-bootstrap';
 
 export const metadata: Metadata = {
   title: 'Yowyob - Moteur de Recherche Local',
@@ -42,6 +43,7 @@ export default function RootLayout({
         <SessionProvider>
           <ThemeProvider>
             <QueryProvider>
+              <GeolocationBootstrap />
               {children}
               <Sidebar />
               <Footer />
