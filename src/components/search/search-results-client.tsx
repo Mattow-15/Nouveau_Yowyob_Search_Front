@@ -1,21 +1,18 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { SearchBar } from '@/components/search/search-bar';
 import { CardSkeleton } from '@/components/ui/skeleton';
 
 import { SearchTabs, SearchTab } from '@/components/search/search-tabs';
-import dynamic from 'next/dynamic';
-const MapView = dynamic(() => import('@/components/map/map-view'), { ssr: false });
 import { SearchResult, AiSearchResponse } from '@/types/search';
 import { searchService } from '@/lib/api/search-service';
 import { useSearchStore } from '@/store';
 import { useSmartGeolocation } from '@/lib/hooks/ui/use-geolocation';
 import { resolveIntent, ResolvedIntent } from '@/lib/utils/intent-resolver';
 import { haversineKm, getResultCoords } from '@/lib/utils/geo-distance';
-import { filterNoisyYowyobProducts } from '@/lib/utils/yowyob-relevance';
 import { YowyobProductsMenu } from '@/components/layout/yowyob-products-menu';
 
 // Google SERP Premium Components
@@ -198,7 +195,6 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
   const [results, setResults]           = useState<SearchResult[]>(initialResults);
   const [isLoading, setIsLoading]       = useState(false);
   const [hasSearched, setHasSearched]   = useState(initialResults.length > 0 || !!initialQuery.trim());
-  const [showMap, setShowMap]           = useState(false);
   const [showAI, setShowAI]             = useState(true);
   const [selectedBusiness, setSelectedBusiness] = useState<SearchResult | null>(initialResults[0] ?? null);
   const [aiResponse, setAiResponse]     = useState<AiSearchResponse | null>(null);
@@ -216,19 +212,12 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
 
   // Requête effectivement envoyée au backend : enrichie si une intention est détectée,
   // identique à la saisie brute sinon (l'utilisateur ne voit que sa saisie originale).
-  const effectiveQuery = resolvedIntent?.rewrittenQuery ?? query;
-
-  // Ref pour savoir si l'utilisateur a explicitement basculé la carte :
-  // dans ce cas on ne la force plus automatiquement.
-  const userToggledMap = useRef(false);
-
-  // Auto-afficher la carte quand l'intention le demande (sauf si l'utilisateur
-  // a déjà choisi manuellement).
-  useEffect(() => {
-    if (resolvedIntent?.autoShowMap && !userToggledMap.current) {
-      setShowMap(true);
-    }
-  }, [resolvedIntent?.autoShowMap]);
+  // `||` et non `??` : certaines intentions (ex. "je veux manger") réduisent
+  // volontairement rewrittenQuery à '' (le filtre esCategory suffit selon
+  // l'auteur de intent-resolver.ts), mais `q` est un paramètre OBLIGATOIRE côté
+  // backend — une chaîne vide fait échouer la requête en 400, donc aucun
+  // résultat affiché. Se rabattre sur la saisie brute dans ce cas.
+  const effectiveQuery = resolvedIntent?.rewrittenQuery || query;
 
   // Timeout de sécurité : si la géoloc prend > 2 s, on lance la recherche
   // sans coordonnées plutôt que de bloquer l'utilisateur.
@@ -283,11 +272,8 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
       let classicResults: SearchResult[] = [];
       let usedFallback = false;
       if (classicRes.status === 'fulfilled' && classicRes.value.success) {
-        // Filtrage AVANT prioritizeResults : ce dernier remonte systématiquement
-        // les organisations Kernel/Yowyob en tête, ce qui effacerait leur rang
-        // d'origine (signal de pertinence) si on filtrait après.
         classicResults = prioritizeResults(
-          filterNoisyYowyobProducts(classicRes.value.results),
+          classicRes.value.results,
           geo.latitude ?? undefined,
           geo.longitude ?? undefined,
         );
@@ -304,7 +290,7 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
             esCategory: resolvedIntent?.esCategory,
           });
           if (fallbackRes.success && fallbackRes.results.length > 0) {
-            classicResults = filterNoisyYowyobProducts(fallbackRes.results);
+            classicResults = fallbackRes.results;
             usedFallback = true;
           }
         } catch { /* fallback silencieux */ }
@@ -368,16 +354,9 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
 
   const handleSearch = (newQuery: string) => {
     setQuery(newQuery);
-    // Réinitialiser le flag carte quand une nouvelle recherche est lancée
-    userToggledMap.current = false;
     const params = new URLSearchParams();
     if (newQuery.trim()) params.set('q', newQuery.trim());
     router.push(`/search?${params.toString()}`);
-  };
-
-  const handleToggleMap = () => {
-    userToggledMap.current = true; // l'utilisateur prend le contrôle
-    setShowMap(prev => !prev);
   };
 
   const handleResultClick = (item: SearchResult) => {
@@ -431,24 +410,6 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
 
         {/* Barre de contrôles */}
         <div className="flex flex-wrap gap-2 mb-4 items-center">
-
-          {/* Toggle carte — style léger */}
-          <button
-            onClick={handleToggleMap}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all
-              ${showMap
-                ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'
-                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-              }`}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {showMap
-                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              }
-            </svg>
-            {showMap ? 'Masquer la carte' : 'Carte'}
-          </button>
 
           {/* Sélecteur de rayon */}
           {hasGeo && !geo.loading && (
@@ -526,54 +487,6 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
                     Aucun résultat dans un rayon de {radius} km — voici les résultats disponibles dans toute la base.
                   </div>
                 )}
-              {showMap ? (
-              // Layout avec carte : résultats libres à gauche, carte sticky à droite
-              <div className="flex flex-col lg:flex-row gap-6 items-start">
-                <div className="flex-1 min-w-0 flex flex-col gap-6">
-                  <SponsoredSection results={sponsoredAds} position="top" />
-                  <PeopleAlsoAsk query={query} />
-                  <OrganicListWithSections list={organicList} onResultClick={handleResultClick} />
-                  {organicListAll.length > perPage && (
-                    <Pagination current_page={safePage} total_pages={totalPages} on_page_change={setCurrentPage} />
-                  )}
-                  <LocalPackSection results={results} query={query} />
-                  <SponsoredSection results={bottomAds} position="bottom" />
-                </div>
-
-                <div className="w-full lg:w-[400px] flex-shrink-0 sticky top-24 flex flex-col gap-4">
-                  <div className="h-[55vh] min-h-[320px] rounded-2xl overflow-hidden shadow-xl">
-                    <MapView
-                      center={
-                        geo.latitude && geo.longitude
-                          ? [geo.latitude, geo.longitude]
-                          : [3.848, 11.5021]
-                      }
-                      zoom={geo.latitude ? 14 : 12}
-                      userLocation={
-                        geo.latitude && geo.longitude
-                          ? [geo.latitude, geo.longitude]
-                          : undefined
-                      }
-                      markers={results
-                        .filter(r => r.location?.lat != null || r.latitude != null)
-                        .map(r => ({
-                          id: r.id,
-                          position: [
-                            r.location?.lat ?? r.latitude ?? 3.848,
-                            r.location?.lng ?? r.longitude ?? 11.5021,
-                          ] as [number, number],
-                          title: r.title || r.name || 'Établissement',
-                          description: r.description,
-                        }))}
-                    />
-                  </div>
-                  {selectedBusiness && (
-                    <BusinessProfilePanel item={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
-                  )}
-                </div>
-              </div>
-            ) : (
-              // Layout standard sans carte
               <div className="flex flex-col gap-6">
                 <SponsoredSection results={sponsoredAds} position="top" />
                 <PeopleAlsoAsk query={query} />
@@ -584,7 +497,6 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
                 <LocalPackSection results={results} query={query} />
                 <SponsoredSection results={bottomAds} position="bottom" />
               </div>
-              )}
               </>
               </div>
             )}

@@ -13,7 +13,6 @@
  */
 
 import { normalizeSearchResult, hasRealName } from './search-service';
-import { filterNoisyYowyobProducts } from '@/lib/utils/yowyob-relevance';
 import type { SearchResult } from '@/types/search';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://localhost:8080').replace(/\/$/, '');
@@ -46,9 +45,7 @@ export async function fetchSearchResultsForSSR(query: string): Promise<SSRSearch
     if (!res.ok) return { results: [], total: 0 };
 
     const data = await res.json();
-    const results = filterNoisyYowyobProducts(
-      (data.results || []).filter(hasRealName).map(normalizeSearchResult)
-    );
+    const results = (data.results || []).filter(hasRealName).map(normalizeSearchResult);
 
     return { results, total: data.total || results.length };
   } catch (error) {
