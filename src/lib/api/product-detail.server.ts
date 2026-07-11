@@ -35,9 +35,12 @@ export async function fetchProductForSSR(id: string): Promise<SearchResult | nul
     // ces deux appels en un seul (sinon : double appel backend à chaque chargement de
     // page, alors que la latence backend est déjà identifiée comme un point sensible).
     // revalidate: 60 -> les fiches ne changent pas d'une seconde à l'autre.
+    // Timeout : même raison que search-results.server.ts — le backend a été observé
+    // bloqué 40s+ voire indéfiniment sur les endpoints de recherche.
     const res = await fetch(`${BACKEND_URL}/api/search/${encodeURIComponent(id)}/details`, {
       headers,
       next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!res.ok) return null;

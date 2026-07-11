@@ -37,9 +37,15 @@ export async function fetchSearchResultsForSSR(query: string): Promise<SSRSearch
     };
 
     const params = new URLSearchParams({ q: query });
+    // Timeout impératif : le backend a été observé restant bloqué 40s+ voire
+    // indéfiniment sur /api/search (health check simple à 8s, donc 10s ici
+    // laisse une marge sans risquer de bloquer tout le rendu de la page).
+    // Sans ça, un backend en difficulté bloque la page SSR indéfiniment au
+    // lieu d'un cas "aucun résultat" dégradé mais rapide.
     const res = await fetch(`${BACKEND_URL}/api/search?${params.toString()}`, {
       headers,
       next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!res.ok) return { results: [], total: 0 };
