@@ -126,11 +126,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     <div className="relative w-full">
       <form onSubmit={handleSubmit}>
         <div className={cn(
-          "flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl shadow-blue-500/20 dark:shadow-blue-400/10 border border-blue-100 dark:border-gray-700 hover:shadow-3xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/20 transition-all duration-500",
+          "flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl shadow-blue-500/20 dark:shadow-blue-400/10 border border-blue-100 dark:border-gray-700 hover:shadow-3xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/20 transition-all duration-500",
           className
         )}>
-          <div className="flex items-center gap-3 flex-1 px-4">
-            <svg className="w-6 h-6 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 px-2 sm:px-4">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -144,17 +144,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 if (onChange) onChange(e.target.value);
               }}
               placeholder={placeholder}
-              className="flex-1 py-4 bg-transparent outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-lg"
+              className="flex-1 min-w-0 py-3 sm:py-4 bg-transparent outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-base sm:text-lg"
             />
             {isLoading && (
-              <div className="spinner w-5 h-5"></div>
+              <div className="spinner w-5 h-5 flex-shrink-0"></div>
             )}
           </div>
           <button
             type="submit"
-            className="px-8 py-4 text-lg font-bold flex items-center gap-2 group bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-2xl transition-colors"
+            className="flex-shrink-0 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-lg font-bold flex items-center gap-1.5 sm:gap-2 group bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-2xl transition-colors"
           >
-            Rechercher
+            <span className="hidden sm:inline">Rechercher</span>
             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>

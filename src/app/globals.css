@@ -87,6 +87,15 @@ body {
   background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
 }
 
+/* Scroll fonctionnel mais invisible (menus/carrousels compacts) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Selection */
 ::selection {
   background: #bae6fd;

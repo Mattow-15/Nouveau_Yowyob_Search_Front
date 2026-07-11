@@ -30,7 +30,7 @@ function TickerSystem({ services }: { services: typeof YOWYOB_MENU_SERVICES }) {
           {doubled.map((s, i) => {
             const inner = (
               <div className="flex flex-col items-center mx-4 group cursor-pointer">
-                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-125 group-hover:shadow-xl transition-transform duration-200">
+                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-125 group-hover:shadow-xl group-active:scale-125 group-active:shadow-xl transition-transform duration-200">
                   <span className="text-xl">{s.emoji}</span>
                 </div>
                 <span className="mt-1 text-[10px] font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -73,7 +73,7 @@ export default function PublicHomePage() {
 
           {/* Logo */}
           <div className="mb-8 text-center">
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-blue-600 dark:text-blue-500">
+            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tight text-blue-600 dark:text-blue-500">
               Yowyob Search
             </h1>
             <p className="mt-4 text-lg md:text-xl font-medium text-gray-500 dark:text-gray-400 tracking-wide">
@@ -87,7 +87,7 @@ export default function PublicHomePage() {
           {/* Search Bar */}
           <div className="w-full max-w-2xl mx-auto">
             <div className="relative flex items-center bg-white dark:bg-gray-800 rounded-full shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] border border-gray-200 dark:border-gray-700 transition-all duration-300 px-2 py-2">
-              <svg className="w-5 h-5 text-gray-400 ml-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-gray-400 ml-3 mr-1.5 sm:ml-4 sm:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -96,11 +96,11 @@ export default function PublicHomePage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Cherchez sur Yowyob"
-                className="flex-1 bg-transparent border-none outline-none text-base md:text-lg text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-3"
+                className="flex-1 min-w-0 bg-transparent border-none outline-none text-base md:text-lg text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-3"
               />
               <button
                 onClick={handleSearch}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-2.5 ml-2 font-medium transition-colors"
+                className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3.5 sm:px-6 py-2.5 ml-1.5 sm:ml-2 text-sm sm:text-base font-medium transition-colors"
               >
                 Rechercher
               </button>

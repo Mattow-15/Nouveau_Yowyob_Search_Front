@@ -24,52 +24,11 @@ import { SponsoredSection } from '@/components/search/serp/sponsored-section';
 import { LocalPackSection } from '@/components/search/serp/local-pack';
 import { OrganicResult } from '@/components/search/serp/organic-result';
 import { BusinessProfilePanel } from '@/components/search/serp/business-profile-panel';
-import { ProductCarousel } from '@/components/search/serp/product-carousel';
 import { YowyobServicePanel } from '@/components/search/serp/yowyob-service-panel';
 import { PeopleAlsoAsk } from '@/components/search/serp/people-also-ask';
 import { AiAnswerPanel } from '@/components/search/serp/ai-answer-panel';
 import { Pagination } from '@/components/search/pagination';
 import { SEARCH_CONFIG } from '@/lib/constants/app-config';
-
-// ── Indicateur de position détectée ───────────────────────────────────────
-function GeoIndicator({ source, city, loading, timedOut }: {
-  source: 'gps' | 'ip' | null;
-  city: string | null;
-  loading: boolean;
-  timedOut: boolean;
-}) {
-  if (loading && !timedOut) {
-    return (
-      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500 animate-pulse">
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-        Détection de votre position...
-      </div>
-    );
-  }
-
-  if (!source) return null;
-
-  const isGps    = source === 'gps';
-  const label    = city ? `${city} · ${isGps ? 'GPS' : 'approx.'}` : isGps ? 'Position GPS' : 'Localisation approximative';
-  const colorCls = isGps
-    ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900'
-    : 'bg-blue-50  text-blue-700  border-blue-200  dark:bg-blue-950/30  dark:text-blue-400  dark:border-blue-900';
-  const dotCls   = isGps ? 'bg-green-500 animate-pulse' : 'bg-blue-400';
-
-  return (
-    <div className="mt-2 flex items-center gap-2">
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${colorCls}`}>
-        <span className={`w-1.5 h-1.5 rounded-full ${dotCls}`} />
-        📍 {label}
-      </span>
-    </div>
-  );
-}
 
 // ── Sélecteur de rayon ─────────────────────────────────────────────────────
 const RADIUS_OPTIONS = [5, 10, 30, 50, 100] as const;
@@ -439,7 +398,8 @@ function SearchContent() {
       <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
 
-          {/* Search Bar + menu waffle + indicateurs */}
+          {/* Search Bar + menu waffle + indicateurs — la position détectée est
+              affichée discrètement dans le footer plutôt qu'ici (cf. Footer). */}
           <div className="mb-4">
             <div className="flex items-center gap-3">
               <div className="flex-1">
@@ -454,12 +414,6 @@ function SearchContent() {
                 <YowyobProductsMenu />
               </div>
             </div>
-            <GeoIndicator
-              source={geo.source}
-              city={geo.city}
-              loading={geo.loading}
-              timedOut={geoTimedOut}
-            />
             {resolvedIntent && (
               <IntentBanner intent={resolvedIntent} rawQuery={query} />
             )}
@@ -572,7 +526,6 @@ function SearchContent() {
                 <div className="flex flex-col lg:flex-row gap-6 items-start">
                   <div className="flex-1 min-w-0 flex flex-col gap-6">
                     <SponsoredSection results={sponsoredAds} position="top" />
-                    <ProductCarousel results={results} />
                     <PeopleAlsoAsk query={query} />
                     <OrganicListWithSections list={organicList} onResultClick={handleResultClick} />
                     {organicListAll.length > perPage && (
@@ -618,7 +571,6 @@ function SearchContent() {
                 // Layout standard sans carte
                 <div className="flex flex-col gap-6">
                   <SponsoredSection results={sponsoredAds} position="top" />
-                  <ProductCarousel results={results} />
                   <PeopleAlsoAsk query={query} />
                   <OrganicListWithSections list={organicList} onResultClick={handleResultClick} />
                   {organicListAll.length > perPage && (
@@ -633,9 +585,12 @@ function SearchContent() {
               )}
             </div>
 
-            {/* ── Sidebar droite : Yowyob Products + fiche établissement ── */}
+            {/* ── Sidebar droite : Yowyob Products + fiche établissement ──
+                Empilée sous les résultats en dessous de lg (pas "hidden" : la
+                recommandation doit rester visible sur mobile/tablette), et
+                collante à droite à partir de lg. */}
             {query.trim() && (
-              <div className="hidden lg:flex flex-col gap-4 w-[320px] flex-shrink-0 sticky top-24">
+              <div className="w-full lg:w-[320px] flex-shrink-0 flex flex-col gap-4 lg:sticky lg:top-24">
                 <YowyobServicePanel query={query} matchedProducts={matchedYowyobProducts} />
                 {selectedBusiness && (
                   <BusinessProfilePanel item={selectedBusiness} onClose={() => setSelectedBusiness(null)} />

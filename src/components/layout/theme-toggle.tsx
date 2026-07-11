@@ -10,7 +10,7 @@ export function ThemeToggle() {
     useEffect(() => { setMounted(true); }, []);
 
     // Évite le flash hydratation (SSR ne connaît pas le thème stocké)
-    if (!mounted) return <div className="w-9 h-9 rounded-xl" />;
+    if (!mounted) return <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl" />;
 
     const isDark = theme === 'dark';
 
@@ -18,7 +18,7 @@ export function ThemeToggle() {
         <button
             onClick={toggleTheme}
             title={isDark ? 'Passer au mode clair' : 'Passer au mode sombre'}
-            className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all duration-200
+            className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl border transition-all duration-200
                 ${isDark
                     ? 'bg-gray-800 border-gray-600 text-yellow-400 hover:bg-gray-700'
                     : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 shadow-sm'

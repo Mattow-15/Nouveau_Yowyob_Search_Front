@@ -49,7 +49,7 @@ export function LocalPackSection({ results, query }: LocalPackProps) {
       {/* Header Local Pack */}
       <div className="bg-white dark:bg-gray-800 px-4 py-2 border-b border-[#dadce0] dark:border-gray-700 flex items-center justify-between">
         <span className="text-[15px] font-medium text-[#202124] dark:text-white">
-          Résultats locaux pour « {query} »
+          Autres résultats à proximité pour « {query} »
         </span>
         <span className="text-[13px] text-[#1a73e8] cursor-pointer hover:underline">
           Voir plus ›
