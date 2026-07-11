@@ -95,7 +95,7 @@ export function YowyobServicePanel({ query, matchedProducts = [] }: YowyobServic
 
       <div className="p-3 flex flex-col gap-2">
         {/* Services les plus pertinents pour cette requête */}
-        {topServices.length > 0 && (
+        {topServices.length > 0 ? (
           <div className="flex flex-col gap-1">
             <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest px-1 mb-0.5 flex items-center gap-1">
               {isRealMatch ? '✓ Trouvé dans vos résultats' : 'Recommandés pour vous'}
@@ -104,6 +104,10 @@ export function YowyobServicePanel({ query, matchedProducts = [] }: YowyobServic
               <ServiceCard key={service.id} service={service} featured={i === 0} />
             ))}
           </div>
+        ) : (
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 px-1 mb-0.5">
+            Aucun service Yowyob particulièrement pertinent pour « {query} »
+          </p>
         )}
 
         {/* Grille compacte du reste */}

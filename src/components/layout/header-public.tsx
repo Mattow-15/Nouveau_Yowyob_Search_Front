@@ -14,7 +14,9 @@ import { YowyobProductsMenu } from './yowyob-products-menu';
 import { useSmartGeolocation } from '@/lib/hooks/ui/use-geolocation';
 
 export const HeaderPublic: React.FC = () => {
-  const { city, source } = useSmartGeolocation();
+  const { city, quartier, source } = useSmartGeolocation();
+  // Affichage : le quartier (plus précis, ex. "Melen") quand connu, sinon la ville.
+  const displayLocation = quartier ?? city;
 
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200/50 dark:border-gray-800">
@@ -56,11 +58,11 @@ export const HeaderPublic: React.FC = () => {
                 <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 truncate">
                   Search Engine
                   {/* Position détectée — discrète, en prolongement du tagline */}
-                  {source && city && (
+                  {source && displayLocation && (
                     <span
                       title={source === 'gps' ? 'Position GPS détectée' : 'Localisation approximative (IP)'}
                       className="text-gray-300 dark:text-gray-700"
-                    > · 📍 {city}</span>
+                    > · 📍 {displayLocation}</span>
                   )}
                 </p>
               </div>
