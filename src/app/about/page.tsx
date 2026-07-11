@@ -3,24 +3,19 @@
  * @author Matteo Owona, Rouchda Yampen
  */
 
-'use client';
-
-import { useSession } from 'next-auth/react';
-import { HeaderPublic } from '@/components/layout/header-public';
-import { HeaderAuthenticated } from '@/components/layout/header-authenticated';
+import type { Metadata } from 'next';
+import { ConditionalLayout } from '@/components/layout/conditional-layout';
+import { JoinCtaButton } from '@/components/layout/join-cta-button';
 import Link from 'next/link';
 
+export const metadata: Metadata = {
+  title: 'À propos — Yowyob Search',
+  description: "Yowyob est un moteur de recherche local qui connecte les utilisateurs aux commerces, services et produits de leur région au Cameroun.",
+};
+
 export default function AboutPage() {
-  const { data: session } = useSession();
-
   return (
-    <>
-      {session ? (
-        <HeaderAuthenticated userName={session.user?.name || undefined} />
-      ) : (
-        <HeaderPublic />
-      )}
-
+    <ConditionalLayout>
       <div className="min-h-screen bg-white dark:bg-gray-900">
         {/* Hero Section */}
         <section className="relative py-20 bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 overflow-hidden">
@@ -280,19 +275,11 @@ export default function AboutPage() {
                   Nous contacter
                 </button>
               </Link>
-              {!session && (
-                <Link href="/auth">
-                  <button className="px-8 py-4 bg-transparent text-white font-bold rounded-2xl border-2 border-white hover:bg-white/10 dark:hover:bg-white/20 transition-all">
-                    Rejoindre Yowyob
-                  </button>
-                </Link>
-              )}
+              <JoinCtaButton />
             </div>
           </div>
         </section>
       </div>
-
-
-    </>
+    </ConditionalLayout>
   );
 }

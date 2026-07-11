@@ -3,24 +3,17 @@
  * @author Matteo Owona, Rouchda Yampen
  */
 
-'use client';
+import type { Metadata } from 'next';
+import { ConditionalLayout } from '@/components/layout/conditional-layout';
 
-import { useSession } from 'next-auth/react';
-import { HeaderPublic } from '@/components/layout/header-public';
-import { HeaderAuthenticated } from '@/components/layout/header-authenticated';
-import { Footer } from '@/components/layout/footer';
+export const metadata: Metadata = {
+  title: "Conditions d'utilisation — Yowyob Search",
+  description: "Conditions d'utilisation du moteur de recherche local Yowyob.",
+};
 
 export default function TermsPage() {
-  const { data: session } = useSession();
-
   return (
-    <>
-      {session ? (
-        <HeaderAuthenticated userName={session.user?.name || undefined} />
-      ) : (
-        <HeaderPublic />
-      )}
-
+    <ConditionalLayout>
       <div className="min-h-screen py-20 px-6 bg-white dark:bg-gray-900">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl font-black mb-8 text-gray-900 dark:text-gray-100">
@@ -139,8 +132,6 @@ export default function TermsPage() {
           </div>
         </div>
       </div>
-
-
-    </>
+    </ConditionalLayout>
   );
 }

@@ -12,13 +12,6 @@ const nextConfig = {
     ];
   },
   
-  // Internationalisation
-  i18n: {
-    locales: ['fr', 'en'],
-    defaultLocale: 'fr',
-    localeDetection: false,
-  },
-
   // Images
   images: {
     domains: [
