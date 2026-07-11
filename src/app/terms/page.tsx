@@ -6,9 +6,23 @@
 import type { Metadata } from 'next';
 import { ConditionalLayout } from '@/components/layout/conditional-layout';
 
+const TITLE = "Conditions d'utilisation — Yowyob Search";
+const DESCRIPTION = "Conditions d'utilisation du moteur de recherche local Yowyob.";
+
 export const metadata: Metadata = {
-  title: "Conditions d'utilisation — Yowyob Search",
-  description: "Conditions d'utilisation du moteur de recherche local Yowyob.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: 'https://search.yowyob.com/terms',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function TermsPage() {

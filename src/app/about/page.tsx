@@ -8,9 +8,23 @@ import { ConditionalLayout } from '@/components/layout/conditional-layout';
 import { JoinCtaButton } from '@/components/layout/join-cta-button';
 import Link from 'next/link';
 
+const TITLE = 'À propos — Yowyob Search';
+const DESCRIPTION = "Yowyob est un moteur de recherche local qui connecte les utilisateurs aux commerces, services et produits de leur région au Cameroun.";
+
 export const metadata: Metadata = {
-  title: 'À propos — Yowyob Search',
-  description: "Yowyob est un moteur de recherche local qui connecte les utilisateurs aux commerces, services et produits de leur région au Cameroun.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: 'https://search.yowyob.com/about',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function AboutPage() {

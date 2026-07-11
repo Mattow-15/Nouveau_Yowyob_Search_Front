@@ -7,9 +7,23 @@ import type { Metadata } from 'next';
 import { ConditionalLayout } from '@/components/layout/conditional-layout';
 import { ContactForm } from '@/components/contact/contact-form';
 
+const TITLE = 'Contact — Yowyob Search';
+const DESCRIPTION = 'Contactez l\'équipe Yowyob pour toute question ou suggestion sur le moteur de recherche local.';
+
 export const metadata: Metadata = {
-  title: 'Contact — Yowyob Search',
-  description: 'Contactez l\'équipe Yowyob pour toute question ou suggestion sur le moteur de recherche local.',
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: 'https://search.yowyob.com/contact',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function ContactPage() {

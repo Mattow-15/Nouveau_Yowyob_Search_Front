@@ -52,8 +52,10 @@ function parseLocation(item: any): { lat: number; lng: number } | undefined {
 }
 
 /** Rejette les documents sans titre exploitable (données de test/incomplètes dans l'index)
- *  plutôt que de les afficher avec un intitulé factice "Sans nom". */
-function hasRealName(item: any): boolean {
+ *  plutôt que de les afficher avec un intitulé factice "Sans nom".
+ *  Exportée pour le même besoin que normalizeSearchResult : réutilisée telle quelle
+ *  par le fetch serveur (SSR) de la page de résultats. */
+export function hasRealName(item: any): boolean {
   const src = item.source && typeof item.source === 'object' ? item.source : {};
   return Boolean(item.name || item.title || src.name);
 }

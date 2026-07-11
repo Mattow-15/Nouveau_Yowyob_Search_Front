@@ -6,9 +6,23 @@
 import type { Metadata } from 'next';
 import { ConditionalLayout } from '@/components/layout/conditional-layout';
 
+const TITLE = 'Politique de confidentialité — Yowyob Search';
+const DESCRIPTION = 'Comment Yowyob collecte, utilise et protège vos données personnelles.';
+
 export const metadata: Metadata = {
-  title: 'Politique de confidentialité — Yowyob Search',
-  description: 'Comment Yowyob collecte, utilise et protège vos données personnelles.',
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: 'https://search.yowyob.com/privacy',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function PrivacyPage() {
