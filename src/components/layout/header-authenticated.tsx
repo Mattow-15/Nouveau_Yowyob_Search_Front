@@ -21,9 +21,7 @@ interface HeaderAuthenticatedProps {
 
 export const HeaderAuthenticated: React.FC<HeaderAuthenticatedProps> = ({ userName }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { city, quartier, source } = useSmartGeolocation();
-  // Affichage : le quartier (plus précis, ex. "Melen") quand connu, sinon la ville.
-  const displayLocation = quartier ?? city;
+  const { city, source } = useSmartGeolocation();
 
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200/50 dark:border-gray-800">
@@ -65,11 +63,11 @@ export const HeaderAuthenticated: React.FC<HeaderAuthenticatedProps> = ({ userNa
                 <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 truncate">
                   Search Engine
                   {/* Position détectée — discrète, en prolongement du tagline */}
-                  {source && displayLocation && (
+                  {source && city && (
                     <span
                       title={source === 'gps' ? 'Position GPS détectée' : 'Localisation approximative (IP)'}
                       className="text-gray-300 dark:text-gray-700"
-                    > · 📍 {displayLocation}</span>
+                    > · 📍 {city}</span>
                   )}
                 </p>
               </div>
