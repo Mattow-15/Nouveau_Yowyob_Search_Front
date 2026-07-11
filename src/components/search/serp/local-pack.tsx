@@ -29,7 +29,11 @@ function getEmoji(cat?: string): string {
 
 export function LocalPackSection({ results, query }: LocalPackProps) {
   const [selected, setSelected] = useState<string | null>(null);
-  const localResults = results.filter(r => r.latitude || r.location?.lat).slice(0, 3);
+
+  // Les 3 premiers résultats retournés (ordre de pertinence backend), sans tri
+  // par distance ni recherche plus loin dans la liste : si aucun des 3 premiers
+  // n'a de coordonnées, la recherche n'a pas de dimension locale → pas de section.
+  const localResults = results.slice(0, 3).filter(r => r.latitude || r.location?.lat);
 
   if (localResults.length === 0) return null;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
 import { geoService } from '@/lib/api/geo-service';
 
 export type GeoSource = 'gps' | 'ip' | null;
@@ -73,8 +73,14 @@ function writeGeoCache(data: Omit<CachedGeo, 'timestamp'>) {
  * 5. Écrit le cache à chaque succès (GPS ou IP).
  *
  * Expose `source` ('gps' | 'ip' | null) pour affichage dans l'UI.
+ *
+ * ⚠️ Ne pas appeler directement dans plusieurs composants : chaque appel déclenche
+ * son propre GPS + géocodage inverse Nominatim, sans coordination entre eux (deux
+ * requêtes concurrentes peuvent retourner des quartiers différents pour la même
+ * position). Utiliser `useSmartGeolocation()` (qui lit le contexte partagé) à la
+ * place — cette fonction interne n'est appelée qu'une seule fois par `GeolocationProvider`.
  */
-export function useSmartGeolocation(): SmartGeolocationState {
+function useGeolocationResolver(): SmartGeolocationState {
   const [state, setState] = useState<SmartGeolocationState>({
     latitude: null,
     longitude: null,
@@ -190,6 +196,37 @@ export function useSmartGeolocation(): SmartGeolocationState {
   }, []);
 
   return state;
+}
+
+// ── Contexte partagé ─────────────────────────────────────────────────────────
+// Une seule résolution GPS/IP + géocodage inverse pour toute l'app, quel que soit
+// le nombre de composants qui consomment la position (évite les appels concurrents
+// à Nominatim qui peuvent retourner des quartiers incohérents pour la même position).
+const GeolocationContext = createContext<SmartGeolocationState | null>(null);
+
+export function GeolocationProvider({ children }: { children: ReactNode }) {
+  const state = useGeolocationResolver();
+  return (
+    <GeolocationContext.Provider value={state}>
+      {children}
+    </GeolocationContext.Provider>
+  );
+}
+
+const NO_PROVIDER_STATE: SmartGeolocationState = {
+  latitude: null,
+  longitude: null,
+  city: null,
+  country: null,
+  source: null,
+  error: null,
+  loading: false,
+};
+
+/** Lit la position résolue par `GeolocationProvider` (monté dans le layout racine). */
+export function useSmartGeolocation(): SmartGeolocationState {
+  const ctx = useContext(GeolocationContext);
+  return ctx ?? NO_PROVIDER_STATE;
 }
 
 /** Hook legacy maintenu pour la compatibilité — GPS only, sans repli IP. */

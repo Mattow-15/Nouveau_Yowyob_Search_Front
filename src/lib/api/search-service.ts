@@ -51,6 +51,13 @@ function parseLocation(item: any): { lat: number; lng: number } | undefined {
   return undefined;
 }
 
+/** Rejette les documents sans titre exploitable (données de test/incomplètes dans l'index)
+ *  plutôt que de les afficher avec un intitulé factice "Sans nom". */
+function hasRealName(item: any): boolean {
+  const src = item.source && typeof item.source === 'object' ? item.source : {};
+  return Boolean(item.name || item.title || src.name);
+}
+
 /** Normalise un hit API sans injecter de PII fictive (règle d'or checklist §4). */
 function normalizeSearchResult(item: any): SearchResult {
   const location = parseLocation(item);
@@ -66,6 +73,10 @@ function normalizeSearchResult(item: any): SearchResult {
 
   return {
     ...item,
+    // item.source peut être l'objet freeform du backend (avec son propre champ `source`
+    // interne, ex. "KERNEL_ORG" / "YOWYOB_PRODUCT") — on remonte ce discriminant en
+    // chaîne au niveau racine pour que les checks `result.source === 'YOWYOB_PRODUCT'` marchent.
+    source: (typeof item.source === 'string' ? item.source : src.source) || undefined,
     name: item.name || item.title || src.name || 'Sans nom',
     type:
       (item.type?.toLowerCase() === 'listing'
@@ -107,7 +118,7 @@ class SearchService {
       if (filters.esCategory) params.append('category', filters.esCategory);
 
       const response = await httpClient.get<any>(`${API_ENDPOINTS.SEARCH}?${params.toString()}`);
-      const results  = (response.results || []).map(normalizeSearchResult);
+      const results  = (response.results || []).filter(hasRealName).map(normalizeSearchResult);
 
       // ── Étape 3 : si filtrage par ville a tout exclu → recherche globale ──
       if (results.length === 0 && filters.city) {
@@ -116,7 +127,7 @@ class SearchService {
         if (filters.type)       globalParams.append('type',     filters.type);
         if (filters.esCategory) globalParams.append('category', filters.esCategory);
         const globalResponse = await httpClient.get<any>(`${API_ENDPOINTS.SEARCH}?${globalParams.toString()}`);
-        const globalResults  = (globalResponse.results || []).map(normalizeSearchResult);
+        const globalResults  = (globalResponse.results || []).filter(hasRealName).map(normalizeSearchResult);
         return { results: globalResults, total: globalResponse.total || globalResults.length, page: filters.page || 1, success: true };
       }
 
@@ -136,7 +147,7 @@ class SearchService {
 
       const response = await httpClient.get<any>(`${API_ENDPOINTS.SEARCH}/ai?${params.toString()}`);
 
-      const sources = (response.sources || []).map(normalizeSearchResult);
+      const sources = (response.sources || []).filter(hasRealName).map(normalizeSearchResult);
 
       return {
         aiAnswer: response.aiAnswer || '',

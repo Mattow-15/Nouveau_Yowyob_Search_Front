@@ -43,11 +43,12 @@ export default function RootLayout({
         <SessionProvider>
           <ThemeProvider>
             <QueryProvider>
-              <GeolocationBootstrap />
-              {children}
-              <Sidebar />
-              <Footer />
-              <Toaster position="top-right" richColors closeButton />
+              <GeolocationBootstrap>
+                {children}
+                <Sidebar />
+                <Footer />
+                <Toaster position="top-right" richColors closeButton />
+              </GeolocationBootstrap>
             </QueryProvider>
           </ThemeProvider>
         </SessionProvider>

@@ -16,6 +16,7 @@ import { searchService } from '@/lib/api/search-service';
 import { useSearchStore } from '@/store';
 import { useSmartGeolocation } from '@/lib/hooks/ui/use-geolocation';
 import { resolveIntent, ResolvedIntent } from '@/lib/utils/intent-resolver';
+import { haversineKm, getResultCoords } from '@/lib/utils/geo-distance';
 import { YowyobProductsMenu } from '@/components/layout/yowyob-products-menu';
 
 // Google SERP Premium Components
@@ -126,23 +127,6 @@ function IntentBanner({ intent, rawQuery }: { intent: ResolvedIntent; rawQuery: 
 
 function isKernelSource(r: SearchResult): boolean {
   return r.collection === 'organization';
-}
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function getResultCoords(r: SearchResult): { lat: number; lng: number } | null {
-  if (r.location?.lat != null) return { lat: r.location.lat, lng: r.location.lng };
-  if (r.latitude != null && r.longitude != null) return { lat: r.latitude, lng: r.longitude };
-  return null;
 }
 
 function prioritizeResults(
@@ -440,6 +424,10 @@ function SearchContent() {
 
   const hasGeo = geo.latitude != null && geo.longitude != null;
 
+  // Produits Yowyob réellement remontés par cette recherche → signal de pertinence
+  // réel pour la recommandation (par opposition à l'heuristique par mots-clés).
+  const matchedYowyobProducts = results.filter(r => r.source === 'YOWYOB_PRODUCT');
+
   return (
     <>
       {session ? (
@@ -585,12 +573,12 @@ function SearchContent() {
                   <div className="flex-1 min-w-0 flex flex-col gap-6">
                     <SponsoredSection results={sponsoredAds} position="top" />
                     <ProductCarousel results={results} />
-                    <LocalPackSection results={results} query={query} />
                     <PeopleAlsoAsk query={query} />
                     <OrganicListWithSections list={organicList} onResultClick={handleResultClick} />
                     {organicListAll.length > perPage && (
                       <Pagination current_page={safePage} total_pages={totalPages} on_page_change={setCurrentPage} />
                     )}
+                    <LocalPackSection results={results} query={query} />
                     <SponsoredSection results={bottomAds} position="bottom" />
                   </div>
 
@@ -631,12 +619,12 @@ function SearchContent() {
                 <div className="flex flex-col gap-6">
                   <SponsoredSection results={sponsoredAds} position="top" />
                   <ProductCarousel results={results} />
-                  <LocalPackSection results={results} query={query} />
                   <PeopleAlsoAsk query={query} />
                   <OrganicListWithSections list={organicList} onResultClick={handleResultClick} />
                   {organicListAll.length > perPage && (
                     <Pagination current_page={safePage} total_pages={totalPages} on_page_change={setCurrentPage} />
                   )}
+                  <LocalPackSection results={results} query={query} />
                   <SponsoredSection results={bottomAds} position="bottom" />
                 </div>
                 )}
@@ -648,7 +636,7 @@ function SearchContent() {
             {/* ── Sidebar droite : Yowyob Products + fiche établissement ── */}
             {query.trim() && (
               <div className="hidden lg:flex flex-col gap-4 w-[320px] flex-shrink-0 sticky top-24">
-                <YowyobServicePanel query={query} />
+                <YowyobServicePanel query={query} matchedProducts={matchedYowyobProducts} />
                 {selectedBusiness && (
                   <BusinessProfilePanel item={selectedBusiness} onClose={() => setSelectedBusiness(null)} />
                 )}

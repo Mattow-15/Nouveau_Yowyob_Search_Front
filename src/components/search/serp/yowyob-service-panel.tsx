@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 import { YOWYOB_MENU_SERVICES, type YowyobService } from '@/lib/constants/yowyob-services';
+import type { SearchResult } from '@/types/search';
 
 // Score de pertinence par service selon la requête (plusieurs services peuvent matcher)
 const RELEVANCE_RULES: { ids: string[]; score: number; re: RegExp }[] = [
@@ -57,12 +58,24 @@ function rankServices(query: string): string[] {
 
 interface YowyobServicePanelProps {
   query: string;
+  /** Produits Yowyob réellement remontés par Elasticsearch pour cette recherche
+   *  (source: "YOWYOB_PRODUCT") — priment sur l'heuristique par mots-clés quand présents,
+   *  car c'est un signal de pertinence réel plutôt qu'une supposition. */
+  matchedProducts?: SearchResult[];
 }
 
-export function YowyobServicePanel({ query }: YowyobServicePanelProps) {
+export function YowyobServicePanel({ query, matchedProducts = [] }: YowyobServicePanelProps) {
   if (!query.trim()) return null;
 
-  const topIds = rankServices(query);
+  // ID du produit dans l'index ES : "yowyob-product-cashier" → "cashier"
+  const matchedIds = matchedProducts
+    .map(r => r.id.replace(/^yowyob-product-/, ''))
+    .filter(id => YOWYOB_MENU_SERVICES.some(s => s.id === id));
+
+  // Priorité au signal réel (résultats effectivement trouvés par la recherche) ;
+  // repli sur l'heuristique par mots-clés si aucun produit n'a matché.
+  const topIds = matchedIds.length > 0 ? matchedIds.slice(0, 3) : rankServices(query);
+  const isRealMatch = matchedIds.length > 0;
   const topServices = topIds
     .map(id => YOWYOB_MENU_SERVICES.find(s => s.id === id))
     .filter(Boolean) as YowyobService[];
@@ -84,11 +97,9 @@ export function YowyobServicePanel({ query }: YowyobServicePanelProps) {
         {/* Services les plus pertinents pour cette requête */}
         {topServices.length > 0 && (
           <div className="flex flex-col gap-1">
-            {topServices.length > 0 && (
-              <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest px-1 mb-0.5">
-                Recommandés pour vous
-              </p>
-            )}
+            <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest px-1 mb-0.5 flex items-center gap-1">
+              {isRealMatch ? '✓ Trouvé dans vos résultats' : 'Recommandés pour vous'}
+            </p>
             {topServices.map((service, i) => (
               <ServiceCard key={service.id} service={service} featured={i === 0} />
             ))}

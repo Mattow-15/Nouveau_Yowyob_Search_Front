@@ -1,12 +1,12 @@
 'use client';
 
-import { useSmartGeolocation } from '@/lib/hooks/ui/use-geolocation';
+import { GeolocationProvider } from '@/lib/hooks/ui/use-geolocation';
 
 /**
- * Déclenche la demande de permission de géolocalisation dès le chargement du site,
- * sans attendre qu'un composant de recherche soit monté.
+ * Déclenche la résolution de la géolocalisation dès le chargement du site et la
+ * partage à toute l'app via un contexte, pour qu'un seul GPS + géocodage inverse
+ * s'exécute (au lieu d'une instance par composant consommateur).
  */
-export function GeolocationBootstrap() {
-  useSmartGeolocation();
-  return null;
+export function GeolocationBootstrap({ children }: { children: React.ReactNode }) {
+  return <GeolocationProvider>{children}</GeolocationProvider>;
 }
