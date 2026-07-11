@@ -58,8 +58,10 @@ function hasRealName(item: any): boolean {
   return Boolean(item.name || item.title || src.name);
 }
 
-/** Normalise un hit API sans injecter de PII fictive (règle d'or checklist §4). */
-function normalizeSearchResult(item: any): SearchResult {
+/** Normalise un hit API sans injecter de PII fictive (règle d'or checklist §4).
+ *  Exportée pour être réutilisée par le fetch serveur (SSR) des pages de détail,
+ *  qui doit produire exactement le même SearchResult que le fetch client. */
+export function normalizeSearchResult(item: any): SearchResult {
   const location = parseLocation(item);
   // SearchDoc stores original payload in item.source (object) — extract top-level fields from it
   const src = item.source && typeof item.source === 'object' ? item.source : {};
