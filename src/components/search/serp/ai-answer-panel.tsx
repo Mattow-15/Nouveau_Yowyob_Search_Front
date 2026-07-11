@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SearchResult } from '@/types/search';
+import { getExternalUrl } from './get-external-url';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -297,7 +298,12 @@ export function AiAnswerPanel({
             {sources.slice(0, 8).map(src => (
               <button
                 key={src.id}
-                onClick={() => onSourceClick?.(src)}
+                onClick={() => {
+                  onSourceClick?.(src);
+                  const url = getExternalUrl(src);
+                  if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                  else window.location.href = `/search/${src.id}`;
+                }}
                 className="flex-shrink-0 flex items-center gap-1.5 bg-[#f0f4f9] dark:bg-gray-800 hover:bg-[#e3eaf4] dark:hover:bg-gray-700 rounded-full px-3 py-1.5 transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-900/40 group"
               >
                 <SourceFavicon website={src.website} title={src.title || src.name} />
