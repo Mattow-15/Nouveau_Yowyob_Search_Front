@@ -132,7 +132,7 @@ function OrganicListWithSections({
   const hasBoth = yowyob.length > 0 && web.length > 0;
 
   return (
-    <div className="flex flex-col gap-0">
+    <div className="flex flex-col gap-0 w-full min-w-0">
       {/* ── Section Yowyob ── */}
       {yowyob.length > 0 && (
         <>
@@ -204,6 +204,16 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
 
   const { addToHistory } = useSearchStore();
   const geo = useSmartGeolocation();
+
+  // GeolocationProvider est monté dans le layout racine, au-dessus du <Suspense>
+  // qui entoure ce composant (SSR streaming) : son effect (lecture du cache
+  // localStorage) peut donc se résoudre AVANT que ce composant n'hydrate,
+  // rendant `geo` déjà différent de ce que le serveur a rendu pour cette
+  // sous-arborescence. `mounted` force le premier rendu client à rester
+  // identique au HTML serveur (geo ignoré), puis bascule juste après —
+  // évite les erreurs "Hydration failed" sur tout ce qui dépend de `geo`.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // ── Intention sémantique ─────────────────────────────────────────────────
   // Calculée de façon synchrone à chaque changement de query — pas de useEffect
@@ -386,7 +396,7 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
             affichée discrètement dans le header plutôt qu'ici. */}
         <div className="mb-4">
           <div className="flex items-center gap-3">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <SearchBar
                 defaultValue={query}
                 onSearch={handleSearch}
@@ -412,7 +422,7 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
         <div className="flex flex-wrap gap-2 mb-4 items-center">
 
           {/* Sélecteur de rayon */}
-          {hasGeo && !geo.loading && (
+          {mounted && hasGeo && !geo.loading && (
             <RadiusSelector value={radius} onChange={(v) => { setRadius(v); setCurrentPage(1); }} />
           )}
 
@@ -462,7 +472,7 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
           {/* ── Colonne principale ── */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
@@ -471,14 +481,14 @@ export function SearchResultsClient({ initialQuery, initialResults }: SearchResu
               <div className="text-center py-20">
                 <h3 className="text-xl text-gray-600 dark:text-gray-400">
                   Aucun résultat trouvé pour &quot;{query}&quot;
-                  {hasGeo && <span className="block text-sm mt-2 text-gray-400">dans un rayon de {radius} km</span>}
+                  {mounted && hasGeo && <span className="block text-sm mt-2 text-gray-400">dans un rayon de {radius} km</span>}
                 </h3>
               </div>
             ) : (
               <div className="animate-in fade-in duration-300">
               <>
                 {/* Bandeau fallback : affiché quand la recherche géo n'a rien trouvé */}
-                {isFallback && hasGeo && (
+                {mounted && isFallback && hasGeo && (
                   <div className="mb-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-sm">
                     <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

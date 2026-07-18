@@ -30,7 +30,7 @@ export default function PrivacyPage() {
     <ConditionalLayout>
       <div className="min-h-screen py-20 px-6 bg-white dark:bg-gray-900">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl font-black mb-8 text-gray-900 dark:text-gray-100">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-8 text-gray-900 dark:text-gray-100">
             Politique de Confidentialité
           </h1>
 

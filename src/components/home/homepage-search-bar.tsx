@@ -33,11 +33,11 @@ export function HomepageSearchBar() {
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Cherchez sur Yowyob"
-          className="flex-1 min-w-0 bg-transparent border-none outline-none text-base md:text-lg text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-3"
+          className="flex-1 min-w-0 truncate bg-transparent border-none outline-none text-base md:text-lg text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-3"
         />
         <button
           onClick={handleSearch}
-          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3.5 sm:px-6 py-2.5 ml-1.5 sm:ml-2 text-sm sm:text-base font-medium transition-colors"
+          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 sm:px-6 py-2.5 ml-1 sm:ml-2 text-sm sm:text-base font-medium transition-colors"
         >
           Rechercher
         </button>

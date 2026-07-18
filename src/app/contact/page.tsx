@@ -31,7 +31,7 @@ export default function ContactPage() {
     <ConditionalLayout>
       <div className="min-h-screen py-20 px-6 bg-white dark:bg-gray-900">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl font-black mb-4 text-gray-900 dark:text-gray-100 text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 text-gray-900 dark:text-gray-100 text-center">
             Contactez-nous
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 text-center mb-12">

@@ -38,13 +38,13 @@ const config: Config = {
       fontFamily: {
         roboto: ['var(--font-roboto)', 'Roboto', 'sans-serif'],
         sans: [
-          'Inter',
+          'var(--font-roboto)',
+          'Roboto',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
           '"Segoe UI"',
-          'Roboto',
           '"Helvetica Neue"',
           'Arial',
           '"Noto Sans"',

@@ -25,9 +25,9 @@ export const HeaderAuthenticated: React.FC<HeaderAuthenticatedProps> = ({ userNa
 
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200/50 dark:border-gray-800">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6">
         <div className="flex items-center justify-between h-20">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 min-w-0">
             <button
               onClick={() => useStore.getState().toggleSidebar()}
               title="Historique"
@@ -60,14 +60,14 @@ export const HeaderAuthenticated: React.FC<HeaderAuthenticatedProps> = ({ userNa
               </div>
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white truncate">Yowyob</h1>
-                <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 truncate">
-                  Search Engine
-                  {/* Position détectée — discrète, en prolongement du tagline */}
+                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                  <span className="hidden sm:inline">Search Engine</span>
+                  {/* Position détectée — toujours visible, y compris mobile */}
                   {source && city && (
                     <span
                       title={source === 'gps' ? 'Position GPS détectée' : 'Localisation approximative (IP)'}
-                      className="text-gray-300 dark:text-gray-700"
-                    > · 📍 {city}</span>
+                      className="text-gray-500 dark:text-gray-400"
+                    ><span className="hidden sm:inline"> · </span>📍 {city}</span>
                   )}
                 </p>
               </div>

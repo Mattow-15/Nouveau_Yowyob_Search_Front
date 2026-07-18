@@ -151,6 +151,14 @@ function useGeolocationResolver(): SmartGeolocationState {
         if (cancelled) return;
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
+        // Rayon de confiance (mètres) fourni par le navigateur. Sur ordinateur
+        // (pas de puce GPS), la position est souvent estimée par triangulation
+        // WiFi/IP et peut être imprécise de plusieurs km — afficher un nom de
+        // quartier précis dans ce cas est trompeur (ex: "Mvog-Mbi" alors que
+        // l'utilisateur est ailleurs). On ne fait confiance au niveau "quartier"
+        // que si la précision rapportée est suffisante.
+        const accuracy = position.coords.accuracy;
+        const preciseEnoughForSuburb = Number.isFinite(accuracy) && accuracy <= 2000;
 
         // Appliquer immédiatement les coordonnées GPS (sans attendre le reverse geocode)
         const cachedCity    = cached?.state.city    ?? null;
@@ -169,8 +177,11 @@ function useGeolocationResolver(): SmartGeolocationState {
           if (res.ok) {
             const data = await res.json();
             const addr = data?.address ?? {};
-            // Préférer suburb (quartier précis) → city → town → county
-            city    = addr.suburb ?? addr.neighbourhood ?? addr.city ?? addr.town ?? addr.county ?? cachedCity;
+            // Quartier précis seulement si la position GPS est assez fiable,
+            // sinon on reste au niveau ville pour ne pas afficher un lieu faux.
+            city = preciseEnoughForSuburb
+              ? (addr.suburb ?? addr.neighbourhood ?? addr.city ?? addr.town ?? addr.county ?? cachedCity)
+              : (addr.city ?? addr.town ?? addr.county ?? cachedCity);
             country = addr.country ?? cachedCountry;
           }
         } catch { /* reverse geocode optionnel — on garde la ville du cache si échec */ }

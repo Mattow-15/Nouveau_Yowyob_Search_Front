@@ -36,7 +36,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-roboto)', 'Roboto', 'system-ui', 'sans-serif'],
       },
     },
   },
