@@ -79,11 +79,16 @@ export default function PrivacyPage() {
                 Cela inclut :
               </p>
               <ul className="space-y-2 ml-6 list-disc">
+                <li>Chiffrement en transit (TLS 1.3) et au repos (AES-256)</li>
                 <li>Cryptage des mots de passe</li>
                 <li>Connexions sécurisées (HTTPS)</li>
-                <li>Accès restreint aux données personnelles</li>
-                <li>Audits de sécurité réguliers</li>
+                <li>Accès restreint aux données personnelles (moindre privilège)</li>
+                <li>Audits de sécurité réguliers et sauvegardes</li>
               </ul>
+              <p className="mt-4">
+                Aucune méthode n&apos;est infaillible à 100 % ; nous vous invitons également à
+                protéger votre compte et vos appareils.
+              </p>
             </section>
 
             <section>
@@ -119,16 +124,49 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-3xl font-bold mb-4 text-gray-900">7. Cookies</h2>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">7. Cookies et Stockage Local</h2>
               <p>
-                Nous utilisons des cookies pour améliorer votre expérience. Vous pouvez
-                désactiver les cookies dans les paramètres de votre navigateur, mais cela
-                peut affecter certaines fonctionnalités.
+                Nous utilisons des cookies et des technologies similaires (localStorage) pour :
+              </p>
+              <ul className="space-y-2 ml-6 list-disc">
+                <li><strong>Essentiels :</strong> maintenir votre session de connexion (authentification)</li>
+                <li><strong>Fonctionnels :</strong> mémoriser vos préférences d&apos;affichage (thème clair/sombre) et votre position géographique approximative pour affiner vos résultats de recherche</li>
+              </ul>
+              <p className="mt-4">
+                Nous n&apos;utilisons pas de cookies publicitaires ou de traceurs tiers à des fins
+                marketing. Vous pouvez désactiver les cookies dans les paramètres de votre
+                navigateur, mais cela peut affecter certaines fonctionnalités (notamment le
+                maintien de la connexion).
               </p>
             </section>
 
             <section>
-              <h2 className="text-3xl font-bold mb-4 text-gray-900">8. Modifications</h2>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">8. Conservation des Données</h2>
+              <p>
+                Nous conservons vos données uniquement le temps nécessaire aux finalités
+                décrites ci-dessus :
+              </p>
+              <ul className="space-y-2 ml-6 list-disc">
+                <li><strong>Compte actif :</strong> pendant toute la durée de vie du compte</li>
+                <li><strong>Compte inactif :</strong> 36 mois après la dernière activité, puis suppression ou anonymisation</li>
+                <li><strong>Journaux de sécurité (connexion, authentification) :</strong> 12 à 24 mois</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">9. Portée géographique</h2>
+              <p>
+                Pour les visiteurs situés au Cameroun et dans la zone CEMAC, le traitement de vos
+                données est conforme à la loi n° 2010/012. Pour les visiteurs de l&apos;Espace
+                Économique Européen ou du Royaume-Uni, nous nous alignons sur les principes du
+                RGPD (accès, rectification, effacement, limitation, portabilité, opposition). Le
+                régulateur compétent au Cameroun est l&apos;ANTIC (Agence Nationale des Technologies
+                de l&apos;Information et de la Communication).
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">10. Modifications</h2>
               <p>
                 Nous pouvons mettre à jour cette politique de confidentialité. Les modifications
                 importantes vous seront notifiées par email ou via notre plateforme.
@@ -136,12 +174,13 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-3xl font-bold mb-4 text-gray-900">9. Contact</h2>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">11. Contact</h2>
               <p>
-                Pour toute question concernant cette politique, contactez-nous à{' '}
+                Pour toute question concernant cette politique, contactez notre Délégué à la
+                Protection des Données à{' '}
                 <a href="mailto:privacy@yowyob.com" className="text-blue-600 hover:text-blue-800 font-semibold">
                   privacy@yowyob.com
-                </a>
+                </a>{' '}ou par téléphone au +237 675 518 880.
               </p>
             </section>
           </div>

@@ -109,7 +109,27 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-3xl font-bold mb-4 text-gray-900">8. Résiliation</h2>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">8. Indemnisation</h2>
+              <p>
+                Vous acceptez de garantir et d&apos;indemniser Yowyob, ses dirigeants, employés et
+                partenaires contre toute réclamation, dommage, responsabilité, coût et dépense
+                résultant d&apos;un mauvais usage du service, de votre contenu, ou d&apos;une violation
+                des présentes conditions ou des lois applicables.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">9. Force Majeure</h2>
+              <p>
+                Nous ne saurions être tenus responsables des retards ou manquements causés par
+                des événements hors de notre contrôle raisonnable, notamment les pannes de
+                réseaux publics, coupures d&apos;électricité, grèves, catastrophes naturelles ou
+                décisions administratives.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">10. Résiliation</h2>
               <p>
                 Nous nous réservons le droit de suspendre ou de résilier votre compte à tout moment,
                 notamment en cas de violation de ces conditions. Vous pouvez également supprimer
@@ -118,7 +138,7 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-3xl font-bold mb-4 text-gray-900">9. Modifications des Conditions</h2>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">11. Modifications des Conditions</h2>
               <p>
                 Nous pouvons modifier ces conditions à tout moment. Les modifications importantes
                 vous seront notifiées par email ou via notre plateforme. Votre utilisation continue
@@ -127,20 +147,22 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-3xl font-bold mb-4 text-gray-900">10. Droit Applicable</h2>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">12. Droit Applicable</h2>
               <p>
-                Ces conditions sont régies par les lois du Cameroun. Tout litige sera soumis à
-                la juridiction exclusive des tribunaux de Yaoundé.
+                Sauf disposition légale impérative contraire, ces conditions sont régies par le
+                droit camerounais. Tout litige sera soumis aux tribunaux compétents de Yaoundé,
+                après une phase de médiation obligatoire de 30 jours.
               </p>
             </section>
 
             <section>
-              <h2 className="text-3xl font-bold mb-4 text-gray-900">11. Contact</h2>
+              <h2 className="text-3xl font-bold mb-4 text-gray-900">13. Contact</h2>
               <p>
-                Pour toute question concernant ces conditions, contactez-nous à{' '}
+                Pour toute question concernant ces conditions, contactez notre service
+                juridique à{' '}
                 <a href="mailto:legal@yowyob.com" className="text-blue-600 hover:text-blue-800 font-semibold">
                   legal@yowyob.com
-                </a>
+                </a>{' '}ou par téléphone au +237 675 518 880.
               </p>
             </section>
           </div>
